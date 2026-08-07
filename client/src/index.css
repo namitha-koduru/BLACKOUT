@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-party-gradient bg-fixed transition-all duration-300;
+  }
+  
+  /* Themes mapping */
+  body.theme-party {
+    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%) !important;
+  }
+  
+  body.theme-neon {
+    background: linear-gradient(135deg, #000000 0%, #0b1528 50%, #020c1b 100%) !important;
+  }
+  
+  body.theme-classic {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+  }
+}
+
+@layer components {
+  /* Glassmorphism card used throughout Lobby/Room/Game screens (Phases 3-6) */
+  .glass-card {
+    @apply rounded-2xl border border-white/10 bg-white/10 shadow-glass backdrop-blur-glass;
+  }
+
+  .btn-primary {
+    @apply rounded-xl bg-gradient-to-r from-mystery-pink to-mystery-purple px-5 py-2.5
+      font-semibold text-white shadow-lg transition-all duration-150
+      hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+}
