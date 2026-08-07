@@ -463,9 +463,8 @@ export const initSocket = (httpServer) => {
         // Notify all sockets in room that the lobby is closing
         io.to(room.roomCode).emit('lobbyClosed', { message: 'The host has closed this lobby.' });
 
-        // Remove room from map
-        roomService.leaveRoom(room.roomCode, room.hostId); // this will trigger host migration or delete, but we delete anyway:
-        roomService.rooms.delete(room.roomCode);
+        // Remove room using clean up service
+        roomService.deleteRoom(room.roomCode);
 
         // Make all sockets leave this room
         const roomSockets = io.sockets.adapter.rooms.get(room.roomCode);

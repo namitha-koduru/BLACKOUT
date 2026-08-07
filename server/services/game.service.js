@@ -99,10 +99,10 @@ const startPhaseTimer = (roomCode, io) => {
 
   io.to(roomCode).emit('timerUpdated', { timer: room.game.timer });
 
-  room.game.timerIntervalId = setInterval(() => {
+  const timerIntervalId = setInterval(() => {
     const r = rooms.get(roomCode);
     if (!r || !r.game) {
-      clearInterval(this);
+      clearInterval(timerIntervalId);
       return;
     }
 
@@ -110,11 +110,15 @@ const startPhaseTimer = (roomCode, io) => {
     io.to(roomCode).emit('timerUpdated', { timer: r.game.timer });
 
     if (r.game.timer <= 0) {
-      clearInterval(r.game.timerIntervalId);
-      r.game.timerIntervalId = null;
+      clearInterval(timerIntervalId);
+      if (r.game) {
+        r.game.timerIntervalId = null;
+      }
       transitionPhase(roomCode, io);
     }
   }, 1000);
+
+  room.game.timerIntervalId = timerIntervalId;
 };
 
 /**

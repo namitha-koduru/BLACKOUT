@@ -1,5 +1,5 @@
 // server.js
-// Entry point. Boots the HTTP server, attaches Socket.IO, and connects to MongoDB.
+// Entry point. Boots the HTTP server, attaches Socket.IO, and starts the game listeners.
 // Run with: npm run dev (nodemon) or npm start (production)
 
 import http from 'http';

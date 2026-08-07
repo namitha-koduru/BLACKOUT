@@ -425,3 +425,36 @@ export const getPublicRooms = () => {
   }
   return publicRoomsList;
 };
+
+/**
+ * Force-deletes a room, clearing all active game intervals and player disconnect timeouts.
+ * @param {string} roomCode
+ */
+export const deleteRoom = (roomCode) => {
+  const code = roomCode.toUpperCase().trim();
+  const room = rooms.get(code);
+  if (!room) return;
+
+  // Clear all player disconnect timeouts to prevent memory leaks
+  room.players.forEach((p) => {
+    if (disconnectTimeouts.has(p.id)) {
+      clearTimeout(disconnectTimeouts.get(p.id));
+      disconnectTimeouts.delete(p.id);
+    }
+  });
+
+  room.spectators.forEach((s) => {
+    if (disconnectTimeouts.has(s.id)) {
+      clearTimeout(disconnectTimeouts.get(s.id));
+      disconnectTimeouts.delete(s.id);
+    }
+  });
+
+  // Clear active countdown interval if in-game
+  if (room.game && room.game.timerIntervalId) {
+    clearInterval(room.game.timerIntervalId);
+    room.game.timerIntervalId = null;
+  }
+
+  rooms.delete(code);
+};
