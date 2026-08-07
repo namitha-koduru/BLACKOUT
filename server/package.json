@@ -1,7 +1,7 @@
 {
   "name": "mystery-box-server",
   "version": "1.0.0",
-  "description": "Mystery Box - real-time multiplayer party game backend (Express + Socket.IO + MongoDB)",
+  "description": "Mystery Box - real-time multiplayer party game backend (Express + Socket.IO)",
   "type": "module",
   "main": "server.js",
   "scripts": {

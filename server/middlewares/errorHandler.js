@@ -27,26 +27,7 @@ export const errorHandler = (err, req, res, next) => {
   let statusCode = err.statusCode || 500;
   let message = err.message || 'Internal server error';
 
-  // Common Mongoose/JWT error shapes → friendlier responses (used from Phase 2 onward)
-  if (err.name === 'ValidationError') {
-    statusCode = 400;
-    message = Object.values(err.errors)
-      .map((e) => e.message)
-      .join(', ');
-  }
-  if (err.code === 11000) {
-    statusCode = 409;
-    const field = Object.keys(err.keyValue || {})[0];
-    message = field ? `${field} already in use` : 'Duplicate value';
-  }
-  if (err.name === 'JsonWebTokenError') {
-    statusCode = 401;
-    message = 'Invalid authentication token';
-  }
-  if (err.name === 'TokenExpiredError') {
-    statusCode = 401;
-    message = 'Authentication token expired';
-  }
+  // Centralized error response formatter
 
   if (!env.isProd) {
     // eslint-disable-next-line no-console
