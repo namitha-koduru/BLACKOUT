@@ -24,8 +24,8 @@ export const notFoundHandler = (req, res, next) => {
 
 // eslint-disable-next-line no-unused-vars
 export const errorHandler = (err, req, res, next) => {
-  let statusCode = err.statusCode || 500;
-  let message = err.message || 'Internal server error';
+  const statusCode = err.statusCode || 500;
+  const message = err.message || 'Internal server error';
 
   // Centralized error response formatter
 
