@@ -109,6 +109,11 @@ export const discoverEvidence = (room, playerId, terminalId) => {
   const picked = undiscovered[undiscovered.length - 1];
   picked.discoveredBy.push(playerId);
 
+  // Increment discovered evidence statistics
+  if (room.game.statistics?.playerStats?.[playerId]) {
+    room.game.statistics.playerStats[playerId].evidenceDiscovered += 1;
+  }
+
   // Set authoritative cooldown (5s)
   room.game.investigationCooldowns[playerId] = Date.now() + 5000;
 
@@ -133,6 +138,12 @@ export const corruptEvidence = (room, playerId, evidenceId, falseSubjectId, fals
   ev.corruptedSubjectPlayerId = falseSubjectId;
   ev.corruptedTargetId = falseTargetId;
   ev.corruptedDescription = falseDescription;
+  ev.corruptedBy = playerId; // Log who corrupted the evidence for the post-game reveal
+
+  // Increment evidence corrupted statistics
+  if (room.game.statistics?.playerStats?.[playerId]) {
+    room.game.statistics.playerStats[playerId].evidenceCorrupted += 1;
+  }
 
   return ev;
 };

@@ -185,11 +185,50 @@ export const useRoomStore = create((set, get) => ({
       }
     });
 
-    socket.on('gameFinished', (room) => {
-      toast.success('Game Over! Let\'s see who won!', { icon: '🎉' });
-      set({ room, playerPositions: {} });
+    socket.on('gameOver', ({ winner, transitionDuration }) => {
+      toast.success(`GAME OVER: ${winner.toUpperCase()} WINS!`, { icon: '🏆' });
       playSound('winner');
       stopBackgroundMusic();
+      set((state) => {
+        if (!state.room) return {};
+        return {
+          room: {
+            ...state.room,
+            gameState: 'game_over',
+            game: {
+              ...state.room.game,
+              gameOver: true,
+              winner,
+            },
+          },
+          timer: transitionDuration,
+        };
+      });
+    });
+
+    socket.on('finalResults', (results) => {
+      set((state) => {
+        if (!state.room || !state.room.game) return {};
+        return {
+          room: {
+            ...state.room,
+            game: {
+              ...state.room.game,
+              finalResults: results,
+            },
+          },
+        };
+      });
+    });
+
+    socket.on('gameReset', () => {
+      toast('Lobby has been reset! Ready up for the next match.', { icon: '🔄' });
+      playSound('ready');
+      set({
+        myRoleInfo: null,
+        playerPositions: {},
+        timer: 0,
+      });
     });
 
     // --- MOVEMENT SYNCHRONIZERS ---
@@ -389,17 +428,14 @@ export const useRoomStore = create((set, get) => ({
     });
   },
 
-  playAgain: (roomCode, hostId) => {
+  playAgain: (roomCode) => {
     const { socket } = get();
-    if (!socket) return;
+    if (!socket) return Promise.resolve({ success: false, message: 'No socket connection' });
 
-    socket.emit('playAgain', { roomCode, hostId }, (res) => {
-      if (res.success) {
-        set({ myRoleInfo: null, playerPositions: {} });
-        stopBackgroundMusic();
-      } else {
-        toast.error(res.message);
-      }
+    return new Promise((resolve) => {
+      socket.emit('playAgain', { roomCode }, (res) => {
+        resolve(res);
+      });
     });
   },
 
@@ -527,6 +563,18 @@ export const useRoomStore = create((set, get) => ({
 
     return new Promise((resolve) => {
       socket.emit('meetingChatMessage', { roomCode, playerId, text }, (res) => {
+        resolve(res);
+      });
+    });
+  },
+
+
+  returnToLobby: (roomCode) => {
+    const { socket } = get();
+    if (!socket) return Promise.resolve({ success: false, message: 'No socket connection' });
+
+    return new Promise((resolve) => {
+      socket.emit('returnToLobby', { roomCode }, (res) => {
         resolve(res);
       });
     });

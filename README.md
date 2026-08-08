@@ -114,3 +114,9 @@ blackout/
 * **`callMeeting`** *(Client -> Server)*: Initiates emergency meeting. Pauses systems, resets coordinates, and opens discussion channels.
 * **`submitVote`** *(Client -> Server)*: Casts secret vote (or Skip). Validates living status and blocks self-voting.
 * **`meetingChatMessage`** *(Client -> Server)*: Transmits discussion messages during active meeting. Restricted to surviving players.
+
+### Game End & Lobby Resets
+* **`gameOver`** *(Server -> Client)*: Emitted when a win condition is declared, detailing the winning team.
+* **`finalResults`** *(Server -> Client)*: Transmits compiled match scores, timelines, Hacker manipulation details, and voting rounds lists.
+* **`playAgain`** *(Client -> Server)*: Host request to reset game states back to waiting room and ready up for a new match.
+* **`returnToLobby`** *(Client -> Server)*: Host request to clear statistics and return all clients to the lobby.

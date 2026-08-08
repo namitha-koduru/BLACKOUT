@@ -162,7 +162,7 @@ export const startRepair = (room, playerId, systemId) => {
 /**
  * Authoritatively validates and processes a completed repair.
  */
-export const completeRepair = (room, playerId, systemId, repairSessionId) => {
+export const completeRepair = (room, playerId, systemId, repairSessionId, io) => {
   if (!room || !room.game) {
     throw new Error('Game is not active.');
   }
@@ -244,6 +244,19 @@ export const completeRepair = (room, playerId, systemId, repairSessionId) => {
       text: `${system.name} system has been fully restored by Crew.`,
     });
   }
+
+  // Increment player statistics
+  if (room.game.statistics?.playerStats?.[playerId]) {
+    const stats = room.game.statistics.playerStats[playerId];
+    stats.repairsCompleted += 1;
+    if (system.health === 100) {
+      stats.systemsRepaired += 1;
+    }
+  }
+
+  // Check win conditions
+  const { checkWinConditions } = require('./gameResult.service.js');
+  checkWinConditions(room, io);
 
   return {
     success: true,

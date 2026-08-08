@@ -696,6 +696,31 @@ export const startGame = (roomCode, io, hostId) => {
     gameOver: false,
     meetingActive: false,
     roleAssignmentComplete: false,
+    statistics: {
+      votingHistory: [],
+      sabotageHistory: [],
+      playerStats: (() => {
+        const stats = {};
+        room.players.forEach((p) => {
+          stats[p.id] = {
+            systemsRepaired: 0,
+            repairsCompleted: 0,
+            evidenceDiscovered: 0,
+            meetingsCalled: 0,
+            correctVotes: 0,
+            survival: true,
+            systemsSabotaged: 0,
+            successfulSabotage: 0,
+            commsDisabled: 0,
+            doorsLocked: 0,
+            blackoutsCaused: 0,
+            evidenceCorrupted: 0,
+            playersEliminated: 0,
+          };
+        });
+        return stats;
+      })(),
+    },
   };
 
   // Emit private roles securely to each player's socket first

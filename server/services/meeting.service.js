@@ -141,6 +141,11 @@ export const startMeeting = (room, playerId, io) => {
     `Emergency meeting called by ${callerName}. Pausing systems.`
   );
 
+  // Increment meetings called stats
+  if (room.game.statistics?.playerStats?.[playerId]) {
+    room.game.statistics.playerStats[playerId].meetingsCalled += 1;
+  }
+
   // Broadcast meeting started and run server timer ticks loop
   io.to(room.roomCode).emit('meetingStarted', { meeting: room.game.meeting });
   startMeetingTimer(room.roomCode, io);
@@ -307,7 +312,51 @@ export const resolveVotes = (room, io) => {
     roleReveal: eliminatedPlayerId ? room.game.players[eliminatedPlayerId].role : null,
   };
 
+  // Record voting round history
+  room.game.statistics = room.game.statistics || {};
+  room.game.statistics.votingHistory = room.game.statistics.votingHistory || [];
+  room.game.statistics.votingHistory.push({
+    round: room.game.currentRound || 1,
+    votes: { ...mt.votes },
+    eliminatedPlayerId,
+    roleReveal: eliminatedPlayerId ? room.game.players[eliminatedPlayerId].role : null,
+  });
+
+  // Increment correctVotes for Crew who voted for Saboteurs
+  Object.keys(mt.votes).forEach((voterId) => {
+    const targetId = mt.votes[voterId];
+    if (targetId !== 'skip') {
+      const targetGP = room.game.players[targetId];
+      if (targetGP && targetGP.team === 'saboteur') {
+        if (room.game.statistics?.playerStats?.[voterId]) {
+          room.game.statistics.playerStats[voterId].correctVotes += 1;
+        }
+      }
+    }
+  });
+
+  // Increment playersEliminated for Saboteurs who voted for the eliminated Crew member
+  if (eliminatedPlayerId) {
+    const eliminatedGP = room.game.players[eliminatedPlayerId];
+    if (eliminatedGP && eliminatedGP.team === 'crew') {
+      Object.keys(mt.votes).forEach((voterId) => {
+        if (mt.votes[voterId] === eliminatedPlayerId) {
+          const voterGP = room.game.players[voterId];
+          if (voterGP && voterGP.team === 'saboteur') {
+            if (room.game.statistics?.playerStats?.[voterId]) {
+              room.game.statistics.playerStats[voterId].playersEliminated += 1;
+            }
+          }
+        }
+      });
+    }
+  }
+
   io.to(room.roomCode).emit('voteResults', mt.result);
+
+  // Check win conditions (e.g. if all saboteurs eliminated or crew outnumbered)
+  const { checkWinConditions } = require('./gameResult.service.js');
+  checkWinConditions(room, io);
 };
 
 /**

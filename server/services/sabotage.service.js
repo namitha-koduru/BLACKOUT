@@ -70,7 +70,7 @@ export const canSabotage = (room, playerId, sabotageType, targetId) => {
 /**
  * Authoritatively executes a sabotage ability.
  */
-export const useSabotage = (room, playerId, sabotageType, targetId) => {
+export const useSabotage = (room, playerId, sabotageType, targetId, io) => {
   // Validate request authorization first
   canSabotage(room, playerId, sabotageType, targetId);
 
@@ -93,80 +93,88 @@ export const useSabotage = (room, playerId, sabotageType, targetId) => {
     };
   }
 
-  const id = `sab_${Math.random().toString(36).substring(2, 9)}`;
+  const id = Math.random().toString(36).substring(2, 9).toUpperCase();
 
+  // Execute specific sabotage mechanics
   if (sabotageType === 'generator') {
     const system = room.game.systems.generator;
-    if (system) {
+    if (system && system.health > 0) {
       const previousHealth = system.health;
       system.health = Math.max(0, system.health - 25);
       system.status = getDerivedStatus(system.health);
       system.lastUpdated = now;
+
       room.game.timeline.push({
         timestamp: now,
         text: 'Generator health damaged by sabotage.',
       });
-      // Generate evidence
+
       createEvidence(room, 'SYSTEM_EVENT', 'GENERATOR', playerId, 'generator', `Generator integrity health dropped: ${previousHealth}% -> ${system.health}%. Cause: UNKNOWN.`);
-      createEvidence(room, 'SABOTAGE_TRACE', 'GENERATOR', playerId, 'generator', `Generator sabotage occurred.`, 'HIGH', playerId);
+      // Sabotage trace only (internal)
+      createEvidence(room, 'SABOTAGE_TRACE', 'GENERATOR', playerId, 'generator', `Generator integrity compromised by sabotage. Source identified: ${playerId}.`, 'HIGH', playerId);
     }
   } else if (sabotageType === 'communications') {
     expiresAt = now + 20000; // 20s
-    room.game.communicationsDisabled = true;
+    room.game.sabotages.communicationsDisabled = true;
     room.game.sabotages.communicationsDisabledExpiresAt = expiresAt;
+
     room.game.timeline.push({
       timestamp: now,
-      text: 'Facility communications hijacked.',
+      text: 'Facility communications hijacked and disabled.',
     });
-    // Generate evidence
-    createEvidence(room, 'COMMUNICATION_LOG', 'COMMUNICATIONS', playerId, 'communications', `Communications offline status active. Duration: 20 seconds. Cause: UNKNOWN.`);
-    createEvidence(room, 'SABOTAGE_TRACE', 'COMMUNICATIONS', playerId, 'communications', `Communications sabotage occurred.`, 'HIGH', playerId);
+
+    createEvidence(room, 'COMMUNICATION_LOG', 'COMMUNICATIONS', playerId, 'comms', 'Communications mainframe offline. Broadcast failure.');
+    createEvidence(room, 'SABOTAGE_TRACE', 'COMMUNICATIONS', playerId, 'comms', `Communications mainframe hijacked. Jammer device deployed by: ${playerId}.`, 'HIGH', playerId);
   } else if (sabotageType === 'security') {
     expiresAt = now + 25000; // 25s
-    room.game.securityDegraded = true;
+    room.game.sabotages.securityDegraded = true;
     room.game.sabotages.securityDegradedExpiresAt = expiresAt;
+
     room.game.timeline.push({
       timestamp: now,
       text: 'Facility security systems degraded.',
     });
-    // Generate evidence
-    createEvidence(room, 'SYSTEM_EVENT', 'SECURITY', playerId, 'security', `Security databases connection degraded. Cause: UNKNOWN.`);
-    createEvidence(room, 'SABOTAGE_TRACE', 'SECURITY', playerId, 'security', `Security sabotage occurred.`, 'HIGH', playerId);
+
+    createEvidence(room, 'SYSTEM_EVENT', 'SECURITY', playerId, 'security', 'Security network diagnostics report degraded integrity.');
+    createEvidence(room, 'SABOTAGE_TRACE', 'SECURITY', playerId, 'security', `Security network firewall breached by user: ${playerId}.`, 'HIGH', playerId);
   } else if (sabotageType === 'door_lockdown') {
     expiresAt = now + 15000; // 15s
     room.game.sabotages.lockedDoors[targetId] = expiresAt;
+
     room.game.timeline.push({
       timestamp: now,
-      text: `Hallway door locked: ${targetId}`,
+      text: `Facility lockdown activated on corridor ${targetId}.`,
     });
-    // Generate evidence
-    createEvidence(room, 'DOOR_LOG', targetId, playerId, targetId, `Door lockdown triggered on ${targetId}. Duration: 15 seconds.`);
-    createEvidence(room, 'SABOTAGE_TRACE', targetId, playerId, targetId, `Door lockdown sabotage occurred.`, 'HIGH', playerId);
+
+    createEvidence(room, 'DOOR_LOG', targetId, playerId, targetId, `Doorway corridor ${targetId} locked down authoritatively.`);
+    createEvidence(room, 'SABOTAGE_TRACE', targetId, playerId, targetId, `Doorway corridor ${targetId} locked down manually. Overridden by: ${playerId}.`, 'HIGH', playerId);
   } else if (sabotageType === 'power_blackout') {
     expiresAt = now + 15000; // 15s
-    room.game.blackoutActive = true;
+    room.game.sabotages.blackoutActive = true;
     room.game.sabotages.blackoutActiveExpiresAt = expiresAt;
+
     room.game.timeline.push({
       timestamp: now,
-      text: 'Facility blackout: Backup power failure.',
+      text: 'Power blackout activated. Facility brightness reduced.',
     });
-    // Generate evidence
-    createEvidence(room, 'SYSTEM_EVENT', 'FACILITY', playerId, 'blackout', `Facility main power failure. Backup systems online. Duration: 15 seconds.`);
-    createEvidence(room, 'SABOTAGE_TRACE', 'FACILITY', playerId, 'blackout', `Power blackout sabotage occurred.`, 'HIGH', playerId);
+
+    createEvidence(room, 'SYSTEM_EVENT', 'FACILITY', playerId, 'blackout', 'Main power grid offline. AUX power operating.');
+    createEvidence(room, 'SABOTAGE_TRACE', 'FACILITY', playerId, 'blackout', `Main power breaker tripped. Manual override by: ${playerId}.`, 'HIGH', playerId);
   } else if (sabotageType === 'system_corruption') {
     expiresAt = now + 20000; // 20s
     const targetSystem = room.game.systems[targetId];
     if (targetSystem) {
-      // Crew sees 80% if actual is low, 30% if actual is high
       const falseHealth = targetSystem.health <= 50 ? 80 : 30;
       room.game.sabotages.corruptedSystems[targetId] = {
         falseHealth,
         expiresAt,
       };
+
       room.game.timeline.push({
         timestamp: now,
-        text: `System integrity records corrupted for: ${targetSystem.name}`,
+        text: `Diagnostics signals corrupted on system ${targetSystem.name}.`,
       });
+
       // Sabotage trace only (internal)
       createEvidence(room, 'SABOTAGE_TRACE', targetId, playerId, targetId, `System integrity corruption sabotage occurred on ${targetId}.`, 'HIGH', playerId);
     }
@@ -191,6 +199,29 @@ export const useSabotage = (room, playerId, sabotageType, targetId) => {
   };
 
   room.game.sabotages.active[id] = session;
+
+  // Increment player statistics
+  if (room.game.statistics?.playerStats?.[playerId]) {
+    const stats = room.game.statistics.playerStats[playerId];
+    stats.systemsSabotaged += (sabotageType === 'generator' || sabotageType === 'system_corruption') ? 1 : 0;
+    stats.commsDisabled += (sabotageType === 'communications') ? 1 : 0;
+    stats.doorsLocked += (sabotageType === 'door_lockdown') ? 1 : 0;
+    stats.blackoutsCaused += (sabotageType === 'power_blackout') ? 1 : 0;
+    stats.successfulSabotage += 1;
+  }
+
+  // Record sabotage history
+  if (room.game.statistics?.sabotageHistory) {
+    room.game.statistics.sabotageHistory.push({
+      timestamp: now,
+      type: sabotageType,
+      playerId,
+    });
+  }
+
+  // Check win conditions (e.g. if generator health <= 0)
+  const { checkWinConditions } = require('./gameResult.service.js');
+  checkWinConditions(room, io);
 
   return session;
 };

@@ -7,6 +7,7 @@ import { cleanupPlayerRepairSessions, startRepair, completeRepair, failRepair } 
 import { useSabotage } from '../services/sabotage.service.js';
 import { discoverEvidence, corruptEvidence, inspectTrackerTrace, sanitizeEvidence } from '../services/evidence.service.js';
 import { startMeeting, submitVote, addMeetingChatMessage } from '../services/meeting.service.js';
+import { resetGame } from '../services/gameResult.service.js';
 
 export const initSocket = (httpServer) => {
   const io = new Server(httpServer, {
@@ -135,7 +136,7 @@ export const initSocket = (httpServer) => {
     socket.on('completeRepair', ({ roomCode, playerId, systemId, repairSessionId }, callback) => {
       try {
         const room = roomService.getRoom(roomCode);
-        const result = completeRepair(room, playerId, systemId, repairSessionId);
+        const result = completeRepair(room, playerId, systemId, repairSessionId, io);
 
         if (typeof callback === 'function') {
           callback(result);
@@ -169,7 +170,7 @@ export const initSocket = (httpServer) => {
     socket.on('sabotageRequest', ({ roomCode, playerId, sabotageType, targetId }, callback) => {
       try {
         const room = roomService.getRoom(roomCode);
-        const session = useSabotage(room, playerId, sabotageType, targetId);
+        const session = useSabotage(room, playerId, sabotageType, targetId, io);
 
         if (typeof callback === 'function') {
           callback({ success: true, session });
@@ -294,7 +295,41 @@ export const initSocket = (httpServer) => {
         }
       }
     });
+    socket.on('playAgain', ({ roomCode }, callback) => {
+      try {
+        const room = roomService.getRoom(roomCode);
+        resetGame(room);
 
+        if (typeof callback === 'function') {
+          callback({ success: true });
+        }
+
+        io.to(room.roomCode).emit('gameReset');
+        blackoutService.broadcastRoomState(room, io);
+      } catch (err) {
+        if (typeof callback === 'function') {
+          callback({ success: false, message: err.message });
+        }
+      }
+    });
+
+    socket.on('returnToLobby', ({ roomCode }, callback) => {
+      try {
+        const room = roomService.getRoom(roomCode);
+        resetGame(room);
+
+        if (typeof callback === 'function') {
+          callback({ success: true });
+        }
+
+        io.to(room.roomCode).emit('gameReset');
+        blackoutService.broadcastRoomState(room, io);
+      } catch (err) {
+        if (typeof callback === 'function') {
+          callback({ success: false, message: err.message });
+        }
+      }
+    });
     // --- CREATE ROOM ---
     socket.on('createRoom', ({ playerId, name, avatar, settings }, callback) => {
       try {
