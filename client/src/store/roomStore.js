@@ -13,9 +13,7 @@ export const useRoomStore = create((set, get) => ({
 
   // Game specific state
   timer: 0,
-  incomingTrade: null, // { id, senderId, senderName, senderAvatar, status }
-  outgoingTrade: null, // { id, receiverId, status }
-  peekResult: null,   // { targetName, boxName, value, type }
+  myRoleInfo: null, // { role, team, ability, description }
 
   // Bind the socket instance and register event listeners
   initSocketListeners: (socket) => {
@@ -31,11 +29,8 @@ export const useRoomStore = create((set, get) => ({
     socket.off('gameStarted');
     socket.off('phaseChanged');
     socket.off('timerUpdated');
-    socket.off('tradeRequested');
-    socket.off('tradeRejected');
-    socket.off('tradeCancelled');
-    socket.off('tradeExpired');
     socket.off('gameFinished');
+    socket.off('roleAssigned');
 
     socket.on('roomUpdated', (room) => {
       set({ room, error: null });
@@ -44,7 +39,9 @@ export const useRoomStore = create((set, get) => ({
     socket.on('chatMessageReceived', (message) => {
       const currentRoom = get().room;
       if (currentRoom) {
-        const exists = currentRoom.chat.some((msg) => msg.timestamp === message.timestamp && msg.senderId === message.senderId);
+        const exists = currentRoom.chat.some(
+          (msg) => msg.timestamp === message.timestamp && msg.senderId === message.senderId
+        );
         if (!exists) {
           const updatedChat = [...currentRoom.chat, message];
           set({
@@ -63,14 +60,14 @@ export const useRoomStore = create((set, get) => ({
 
     socket.on('kicked', ({ message }) => {
       toast.error(message || 'You have been kicked from the lobby.');
-      set({ room: null, kicked: true });
+      set({ room: null, kicked: true, myRoleInfo: null });
       sessionStorage.removeItem('mysterybox_active_room_code');
       stopBackgroundMusic();
     });
 
     socket.on('lobbyClosed', ({ message }) => {
       toast.error(message || 'The lobby was closed by the host.');
-      set({ room: null, incomingTrade: null, outgoingTrade: null, peekResult: null });
+      set({ room: null, myRoleInfo: null });
       sessionStorage.removeItem('mysterybox_active_room_code');
       stopBackgroundMusic();
     });
@@ -78,36 +75,29 @@ export const useRoomStore = create((set, get) => ({
     // --- GAME ENGINE EVENTS ---
     socket.on('gameStarted', (room) => {
       toast.success('Game started! Prepare yourself!');
-      set({ room, incomingTrade: null, outgoingTrade: null, peekResult: null, error: null });
+      set({ room, error: null });
       playSound('ready');
       startBackgroundMusic();
     });
 
+    socket.on('roleAssigned', (roleInfo) => {
+      set({ myRoleInfo: roleInfo });
+    });
+
     socket.on('phaseChanged', ({ phase, room }) => {
-      set({ room });
-      // Reset trading state when moving away from TRADING phase
-      if (phase !== 'TRADING') {
-        set({ incomingTrade: null, outgoingTrade: null });
+      if (room) {
+        set({ room });
       }
-      // Reset peeks at start of round
-      if (phase === 'BOX_DISTRIBUTION') {
-        set({ peekResult: null });
-      }
-      
-      // Toast notification and audio cues for new phase
-      if (phase === 'TRADING') {
-        toast('Trading Phase Started! Swap your boxes!', { icon: '🤝' });
-        playSound('trade_request');
-      } else if (phase === 'CARD_PHASE') {
-        toast('Special Card Phase! Play your abilities!', { icon: '⚡' });
+
+      // Audio cues and toasts for phase changes
+      if (phase === 'ROLE_ASSIGNMENT') {
+        toast('Your secret role is assigned!', { icon: '🔍' });
         playSound('ready');
-      } else if (phase === 'REVEAL') {
-        toast('Revealing Box Contents...', { icon: '🎁' });
-        playSound('box_open');
-      } else if (phase === 'LEADERBOARD') {
-        toast('Round Scores updated!', { icon: '🏆' });
-        playSound('leaderboard');
-      } else if (phase === 'BOX_DISTRIBUTION') {
+      } else if (phase === 'COUNTDOWN') {
+        toast('Prepare to explore the facility!', { icon: '🚨' });
+        playSound('ready');
+      } else if (phase === 'EXPLORATION') {
+        toast('Exploration started! Complete your tasks!', { icon: '⚡' });
         playSound('ready');
       }
     });
@@ -121,31 +111,9 @@ export const useRoomStore = create((set, get) => ({
       }
     });
 
-    socket.on('tradeRequested', (trade) => {
-      set({ incomingTrade: trade });
-      playSound('trade_request');
-    });
-
-    socket.on('tradeRejected', () => {
-      toast.error('Your trade request was rejected.');
-      set({ outgoingTrade: null });
-      playSound('trade_rejected');
-    });
-
-    socket.on('tradeCancelled', () => {
-      set({ incomingTrade: null });
-      playSound('trade_rejected');
-    });
-
-    socket.on('tradeExpired', () => {
-      toast.error('Trade request expired.');
-      set({ incomingTrade: null, outgoingTrade: null });
-      playSound('trade_rejected');
-    });
-
     socket.on('gameFinished', (room) => {
       toast.success('Game Over! Let\'s see who won!', { icon: '🎉' });
-      set({ room, incomingTrade: null, outgoingTrade: null, peekResult: null });
+      set({ room });
       playSound('winner');
       stopBackgroundMusic();
     });
@@ -159,7 +127,7 @@ export const useRoomStore = create((set, get) => ({
     socket.emit('createRoom', { playerId, name, avatar, settings }, (res) => {
       set({ loading: false });
       if (res.success) {
-        set({ room: res.room, kicked: false });
+        set({ room: res.room, kicked: false, myRoleInfo: null });
         sessionStorage.setItem('mysterybox_active_room_code', res.room.roomCode);
       } else {
         set({ error: res.message });
@@ -176,7 +144,7 @@ export const useRoomStore = create((set, get) => ({
     socket.emit('joinRoom', { roomCode, playerId, name, avatar, asSpectator }, (res) => {
       set({ loading: false });
       if (res.success) {
-        set({ room: res.room, kicked: false });
+        set({ room: res.room, kicked: false, myRoleInfo: null });
         sessionStorage.setItem('mysterybox_active_room_code', res.room.roomCode);
       } else {
         set({ error: res.message });
@@ -197,7 +165,7 @@ export const useRoomStore = create((set, get) => ({
         sessionStorage.setItem('mysterybox_active_room_code', res.room.roomCode);
         toast.success('Reconnected to lobby!');
       } else {
-        set({ room: null, error: res.message });
+        set({ room: null, error: res.message, myRoleInfo: null });
         sessionStorage.removeItem('mysterybox_active_room_code');
       }
     });
@@ -209,7 +177,7 @@ export const useRoomStore = create((set, get) => ({
 
     socket.emit('leaveRoom', { roomCode, playerId }, (res) => {
       if (res.success) {
-        set({ room: null, incomingTrade: null, outgoingTrade: null, peekResult: null });
+        set({ room: null, myRoleInfo: null });
         sessionStorage.removeItem('mysterybox_active_room_code');
       }
     });
@@ -281,7 +249,7 @@ export const useRoomStore = create((set, get) => ({
 
     socket.emit('deleteRoom', { roomCode, hostId }, (res) => {
       if (res.success) {
-        set({ room: null, incomingTrade: null, outgoingTrade: null, peekResult: null });
+        set({ room: null, myRoleInfo: null });
         sessionStorage.removeItem('mysterybox_active_room_code');
         toast.success('Room closed.');
       } else {
@@ -304,91 +272,17 @@ export const useRoomStore = create((set, get) => ({
   // --- GAME SPECIFIC ACTIONS ---
   startGame: (roomCode, hostId) => {
     const { socket } = get();
-    if (!socket) return;
+    if (!socket) return Promise.resolve(false);
 
-    socket.emit('startGame', { roomCode, hostId }, (res) => {
-      if (!res.success) {
-        toast.error(res.message);
-      }
-    });
-  },
-
-  sendTradeRequest: (roomCode, senderId, receiverId) => {
-    const { socket } = get();
-    if (!socket) return;
-
-    socket.emit('tradeRequest', { roomCode, senderId, receiverId }, (res) => {
-      if (res.success) {
-        set({ outgoingTrade: res.trade });
-        toast.success('Trade request sent!');
-      } else {
-        toast.error(res.message);
-      }
-    });
-  },
-
-  acceptTrade: (roomCode, tradeId, receiverId) => {
-    const { socket } = get();
-    if (!socket) return;
-
-    socket.emit('tradeAccepted', { roomCode, tradeId, receiverId }, (res) => {
-      if (res.success) {
-        set({ incomingTrade: null });
-        toast.success('Trade accepted!');
-        playSound('trade_accepted');
-      } else {
-        toast.error(res.message);
-      }
-    });
-  },
-
-  rejectTrade: (roomCode, tradeId, receiverId) => {
-    const { socket } = get();
-    if (!socket) return;
-
-    socket.emit('tradeRejected', { roomCode, tradeId, receiverId }, (res) => {
-      if (res.success) {
-        set({ incomingTrade: null });
-        toast('Trade request rejected.', { icon: '❌' });
-        playSound('trade_rejected');
-      } else {
-        toast.error(res.message);
-      }
-    });
-  },
-
-  cancelTrade: (roomCode, playerId) => {
-    const { socket } = get();
-    if (!socket) return;
-
-    socket.emit('tradeCancelled', { roomCode, playerId }, (res) => {
-      if (res.success) {
-        set({ outgoingTrade: null });
-        toast('Trade request cancelled.', { icon: '🚫' });
-        playSound('trade_rejected');
-      } else {
-        toast.error(res.message);
-      }
-    });
-  },
-
-  playCard: (roomCode, playerId, targetPlayerId) => {
-    const { socket } = get();
-    if (!socket) return;
-
-    socket.emit('cardPlayed', { roomCode, playerId, targetPlayerId }, (res) => {
-      if (res.success) {
-        if (res.peekResult) {
-          set({ peekResult: res.peekResult });
-          toast.success(`Peek result: ${res.peekResult.targetName}'s box has ${res.peekResult.boxName}!`, { duration: 5000 });
-          playSound('card_played');
+    return new Promise((resolve) => {
+      socket.emit('startGame', { roomCode, hostId }, (res) => {
+        if (!res.success) {
+          toast.error(res.message);
+          resolve(false);
         } else {
-          toast.success('Special card played!');
-          playSound('card_played');
+          resolve(true);
         }
-      } else {
-        toast.error(res.message);
-      }
+      });
     });
   },
 
@@ -398,6 +292,7 @@ export const useRoomStore = create((set, get) => ({
 
     socket.emit('playAgain', { roomCode, hostId }, (res) => {
       if (res.success) {
+        set({ myRoleInfo: null });
         stopBackgroundMusic();
       } else {
         toast.error(res.message);

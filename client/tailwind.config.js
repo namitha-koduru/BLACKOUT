@@ -15,6 +15,14 @@ export default {
           purple: '#a855f7',
           teal: '#2dd4bf',
         },
+        blackout: {
+          bg: '#0a0b10',
+          panel: '#151722',
+          red: '#ef4444',
+          cyan: '#06b6d4',
+          amber: '#f59e0b',
+          gray: '#1e2230',
+        },
       },
       backgroundImage: {
         'party-gradient': 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',

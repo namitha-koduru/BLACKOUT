@@ -2,7 +2,7 @@
 import { Server } from 'socket.io';
 import { env } from '../config/env.js';
 import * as roomService from '../services/room.service.js';
-import * as gameService from '../services/game.service.js';
+import * as blackoutService from '../services/blackout.service.js';
 
 export const initSocket = (httpServer) => {
   const io = new Server(httpServer, {
@@ -23,7 +23,7 @@ export const initSocket = (httpServer) => {
         if (!room) throw new Error('Room not found');
         if (room.hostId !== hostId) throw new Error('Only the host can start the game');
 
-        const updatedRoom = gameService.startGame(roomCode, io);
+        const updatedRoom = blackoutService.startGame(roomCode, io, hostId);
 
         // eslint-disable-next-line no-console
         console.log(`[socket] Game started in room: ${roomCode}`);
@@ -32,137 +32,22 @@ export const initSocket = (httpServer) => {
           callback({ success: true });
         }
 
-        io.to(roomCode).emit('gameStarted', updatedRoom);
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error('[socket] startGame error:', err.message);
-        if (typeof callback === 'function') {
-          callback({ success: false, message: err.message });
-        }
-      }
-    });
-
-    // --- TRADE REQUEST ---
-    socket.on('tradeRequest', ({ roomCode, senderId, receiverId }, callback) => {
-      try {
-        const { room, trade, receiverSocketId } = gameService.createTradeRequest(
-          roomCode,
-          senderId,
-          receiverId,
-          io
-        );
-
-        if (typeof callback === 'function') {
-          callback({ success: true, trade });
-        }
-
-        // Notify receiver
-        if (receiverSocketId) {
-          io.to(receiverSocketId).emit('tradeRequested', trade);
-        }
-
-        io.to(room.roomCode).emit('roomUpdated', room);
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error('[socket] tradeRequest error:', err.message);
-        if (typeof callback === 'function') {
-          callback({ success: false, message: err.message });
-        }
-      }
-    });
-
-    // --- ACCEPT TRADE ---
-    socket.on('tradeAccepted', ({ roomCode, tradeId, receiverId }, callback) => {
-      try {
-        const room = gameService.acceptTradeRequest(roomCode, tradeId, receiverId);
-
-        if (typeof callback === 'function') {
-          callback({ success: true });
-        }
-
-        io.to(room.roomCode).emit('roomUpdated', room);
-        io.to(room.roomCode).emit('chatMessageReceived', {
-          senderId: 'system',
-          senderName: 'System',
-          text: `A trade was accepted and boxes were swapped!`,
-          timestamp: Date.now(),
+        // Emit gameStarted securely (sanitized per player/spectator)
+        updatedRoom.players.forEach((p) => {
+          if (p.socketId && p.connected) {
+            const state = blackoutService.sanitizeRoomForPlayer(updatedRoom, p.id);
+            io.to(p.socketId).emit('gameStarted', state);
+          }
+        });
+        updatedRoom.spectators.forEach((s) => {
+          if (s.socketId && s.connected) {
+            const state = blackoutService.sanitizeRoomForPlayer(updatedRoom, s.id);
+            io.to(s.socketId).emit('gameStarted', state);
+          }
         });
       } catch (err) {
         // eslint-disable-next-line no-console
-        console.error('[socket] tradeAccepted error:', err.message);
-        if (typeof callback === 'function') {
-          callback({ success: false, message: err.message });
-        }
-      }
-    });
-
-    // --- REJECT TRADE ---
-    socket.on('tradeRejected', ({ roomCode, tradeId, receiverId }, callback) => {
-      try {
-        const { room, senderSocketId } = gameService.rejectTradeRequest(
-          roomCode,
-          tradeId,
-          receiverId
-        );
-
-        if (typeof callback === 'function') {
-          callback({ success: true });
-        }
-
-        if (senderSocketId) {
-          io.to(senderSocketId).emit('tradeRejected', { tradeId });
-        }
-
-        io.to(room.roomCode).emit('roomUpdated', room);
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error('[socket] tradeRejected error:', err.message);
-        if (typeof callback === 'function') {
-          callback({ success: false, message: err.message });
-        }
-      }
-    });
-
-    // --- CANCEL TRADE ---
-    socket.on('tradeCancelled', ({ roomCode, playerId }, callback) => {
-      try {
-        const { room, receiverSocketId } = gameService.cancelTradeRequest(roomCode, playerId);
-
-        if (typeof callback === 'function') {
-          callback({ success: true });
-        }
-
-        if (receiverSocketId) {
-          io.to(receiverSocketId).emit('tradeCancelled', { playerId });
-        }
-
-        io.to(room.roomCode).emit('roomUpdated', room);
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error('[socket] tradeCancelled error:', err.message);
-        if (typeof callback === 'function') {
-          callback({ success: false, message: err.message });
-        }
-      }
-    });
-
-    // --- PLAY SPECIAL CARD ---
-    socket.on('cardPlayed', ({ roomCode, playerId, targetPlayerId }, callback) => {
-      try {
-        const result = gameService.playSpecialCard(roomCode, playerId, targetPlayerId);
-
-        if (typeof callback === 'function') {
-          if (result.peekResult) {
-            callback({ success: true, peekResult: result.peekResult });
-          } else {
-            callback({ success: true });
-          }
-        }
-
-        io.to(result.room.roomCode).emit('roomUpdated', result.room);
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error('[socket] cardPlayed error:', err.message);
+        console.error('[socket] startGame error:', err.message);
         if (typeof callback === 'function') {
           callback({ success: false, message: err.message });
         }
@@ -176,7 +61,7 @@ export const initSocket = (httpServer) => {
         if (!room) throw new Error('Room not found');
         if (room.hostId !== hostId) throw new Error('Only the host can reset the lobby');
 
-        const updatedRoom = gameService.resetToLobby(roomCode);
+        const updatedRoom = blackoutService.resetToLobby(roomCode);
 
         // eslint-disable-next-line no-console
         console.log(`[socket] Game reset back to waiting lobby: ${roomCode}`);
@@ -185,7 +70,8 @@ export const initSocket = (httpServer) => {
           callback({ success: true });
         }
 
-        io.to(roomCode).emit('roomUpdated', updatedRoom);
+        // No secret roles exist in waiting phase, can use standard broadcast
+        blackoutService.broadcastRoomState(updatedRoom, io);
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error('[socket] playAgain error:', err.message);
@@ -216,8 +102,8 @@ export const initSocket = (httpServer) => {
           callback({ success: true, room });
         }
 
-        // Notify room players
-        io.to(room.roomCode).emit('roomUpdated', room);
+        // Notify room players securely
+        blackoutService.broadcastRoomState(room, io);
         // Broadcast updated public rooms list
         io.emit('publicRoomsUpdated', roomService.getPublicRooms());
       } catch (err) {
@@ -247,12 +133,13 @@ export const initSocket = (httpServer) => {
         // eslint-disable-next-line no-console
         console.log(`[socket] Player ${name} joined room: ${room.roomCode}`);
 
+        const sanitizedRoom = blackoutService.sanitizeRoomForPlayer(room, playerId);
         if (typeof callback === 'function') {
-          callback({ success: true, room });
+          callback({ success: true, room: sanitizedRoom });
         }
 
-        // Notify room players
-        io.to(room.roomCode).emit('roomUpdated', room);
+        // Notify room players securely
+        blackoutService.broadcastRoomState(room, io);
         // Broadcast updated public rooms list
         io.emit('publicRoomsUpdated', roomService.getPublicRooms());
       } catch (err) {
@@ -274,15 +161,30 @@ export const initSocket = (httpServer) => {
         const room = roomService.reconnectPlayer(roomCode, playerId, socket.id);
         socket.join(room.roomCode);
 
+        // If game is active, emit role metadata again so client reconstructs it
+        if (room.game && room.game.players[playerId]) {
+          const pGame = room.game.players[playerId];
+          const roleMeta = blackoutService.ROLES[pGame.role];
+          if (roleMeta) {
+            socket.emit('roleAssigned', {
+              role: pGame.role,
+              team: roleMeta.team,
+              ability: roleMeta.ability,
+              description: roleMeta.description
+            });
+          }
+        }
+
         // eslint-disable-next-line no-console
         console.log(`[socket] Player ${playerId} reconnected to room: ${room.roomCode}`);
 
+        const sanitizedRoom = blackoutService.sanitizeRoomForPlayer(room, playerId);
         if (typeof callback === 'function') {
-          callback({ success: true, room });
+          callback({ success: true, room: sanitizedRoom });
         }
 
-        // Notify room players of reconnection
-        io.to(room.roomCode).emit('roomUpdated', room);
+        // Notify room players securely
+        blackoutService.broadcastRoomState(room, io);
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error('[socket] reconnect error:', err.message);
@@ -310,7 +212,7 @@ export const initSocket = (httpServer) => {
         }
 
         if (room) {
-          io.to(room.roomCode).emit('roomUpdated', room);
+          blackoutService.broadcastRoomState(room, io);
         }
 
         // Broadcast updated public rooms list
@@ -338,8 +240,8 @@ export const initSocket = (httpServer) => {
           io.to(targetSocketId).emit('kicked', { message: 'You have been kicked from the lobby.' });
         }
 
-        // Notify remaining room players
-        io.to(room.roomCode).emit('roomUpdated', room);
+        // Notify remaining room players securely
+        blackoutService.broadcastRoomState(room, io);
         // Broadcast updated public rooms list
         io.emit('publicRoomsUpdated', roomService.getPublicRooms());
       } catch (err) {
@@ -360,7 +262,7 @@ export const initSocket = (httpServer) => {
           callback({ success: true });
         }
 
-        io.to(room.roomCode).emit('roomUpdated', room);
+        blackoutService.broadcastRoomState(room, io);
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error('[socket] transferHost error:', err.message);
@@ -379,7 +281,7 @@ export const initSocket = (httpServer) => {
           callback({ success: true });
         }
 
-        io.to(room.roomCode).emit('roomUpdated', room);
+        blackoutService.broadcastRoomState(room, io);
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error('[socket] playerReady error:', err.message);
@@ -397,7 +299,7 @@ export const initSocket = (httpServer) => {
           callback({ success: true });
         }
 
-        io.to(room.roomCode).emit('roomUpdated', room);
+        blackoutService.broadcastRoomState(room, io);
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error('[socket] playerUnready error:', err.message);
@@ -416,7 +318,7 @@ export const initSocket = (httpServer) => {
           callback({ success: true });
         }
 
-        io.to(room.roomCode).emit('roomUpdated', room);
+        blackoutService.broadcastRoomState(room, io);
         io.emit('publicRoomsUpdated', roomService.getPublicRooms());
       } catch (err) {
         // eslint-disable-next-line no-console
@@ -508,7 +410,7 @@ export const initSocket = (httpServer) => {
         console.log(`[socket] Reconnect grace period expired for player: ${playerId} in room: ${roomCode}`);
 
         if (updatedRoom) {
-          io.to(roomCode).emit('roomUpdated', updatedRoom);
+          blackoutService.broadcastRoomState(updatedRoom, io);
           io.to(roomCode).emit('chatMessageReceived', {
             senderId: 'system',
             senderName: 'System',

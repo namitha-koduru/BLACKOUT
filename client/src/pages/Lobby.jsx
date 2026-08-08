@@ -6,7 +6,7 @@ import { useUserStore } from '../store/userStore.js';
 import { useRoomStore } from '../store/roomStore.js';
 import { useSocket } from '../hooks/useSocket.js';
 import toast from 'react-hot-toast';
-import GameScreen from './GameScreen.jsx';
+import BlackoutGame from './BlackoutGame.jsx';
 import WinnerScreen from './WinnerScreen.jsx';
 import SettingsModal from '../components/SettingsModal.jsx';
 
@@ -30,6 +30,7 @@ const Lobby = () => {
 
   const [message, setMessage] = useState('');
   const [showSettings, setShowSettings] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
   const chatEndRef = useRef(null);
 
   // Redirect to Home if user setup is missing
@@ -62,7 +63,7 @@ const Lobby = () => {
 
   // Dynamically switch panels based on game states to prevent reloads
   if (room.gameState !== 'waiting' && room.gameState !== 'game_over') {
-    return <GameScreen />;
+    return <BlackoutGame />;
   }
 
   if (room.gameState === 'game_over') {
@@ -102,7 +103,11 @@ const Lobby = () => {
   // Check if all OTHER players are ready to activate the start button for the host
   const otherPlayers = room.players.filter((p) => p.id !== room.hostId);
   const canStartGame =
-    otherPlayers.length > 0 && otherPlayers.every((p) => p.ready) && room.players.length >= 2;
+    otherPlayers.length > 0 &&
+    otherPlayers.every((p) => p.ready) &&
+    room.players.length >= 4 &&
+    room.gameState === 'waiting' &&
+    !isStarting;
 
   return (
     <div className="flex min-h-screen flex-col items-center p-4 md:p-8">
@@ -409,11 +414,15 @@ const Lobby = () => {
                     : 'bg-white/10 text-white/30 border border-white/10 cursor-not-allowed'
                 }`}
                 disabled={!canStartGame}
-                onClick={() => {
-                  startGame(room.roomCode, playerId);
+                onClick={async () => {
+                  setIsStarting(true);
+                  const success = await startGame(room.roomCode, playerId);
+                  if (!success) {
+                    setIsStarting(false);
+                  }
                 }}
               >
-                Start Game (Needs all players ready)
+                {isStarting ? 'STARTING...' : 'Start Game (Needs 4+ players & all ready)'}
               </button>
             )}
 

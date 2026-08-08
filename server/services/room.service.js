@@ -120,7 +120,21 @@ export const joinRoom = (roomCode, playerInfo, asSpectator = false) => {
   }
 
   // Check if forced to spectate (game already in progress or chosen manually)
-  if (room.gameState !== 'waiting' || asSpectator) {
+  if (room.gameState !== 'waiting') {
+    if (!asSpectator) {
+      throw new Error('Game already in progress.');
+    }
+    room.spectators.push({
+      id: playerInfo.id,
+      socketId: playerInfo.socketId,
+      name: playerInfo.name,
+      avatar: playerInfo.avatar,
+      connected: true,
+    });
+    return room;
+  }
+
+  if (asSpectator) {
     room.spectators.push({
       id: playerInfo.id,
       socketId: playerInfo.socketId,
@@ -450,7 +464,7 @@ export const deleteRoom = (roomCode) => {
     }
   });
 
-  // Trigger external cleanup callback (e.g. for game.service to clear its own timers/timeouts)
+  // Trigger external cleanup callback (e.g. for blackout.service to clear its own timers/timeouts)
   if (roomCleanupCallback) {
     roomCleanupCallback(code);
   }
