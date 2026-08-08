@@ -59,11 +59,69 @@ export const ROLES = {
   },
 };
 
-// Module-level storage for timers: roomCode -> { phaseStartedAt, phaseEndsAt, intervalId }
-const roomTimers = new Map();
+// 2D Facility Layout Walkable Rectangles
+export const WALKABLE_AREAS = [
+  // Rooms
+  { name: 'CENTRAL HUB', x: 450, y: 300, w: 300, h: 250, type: 'room' },
+  { name: 'SECURITY', x: 450, y: 50, w: 300, h: 150, type: 'room' },
+  { name: 'LAB', x: 100, y: 300, w: 250, h: 250, type: 'room' },
+  { name: 'GENERATOR', x: 850, y: 300, w: 250, h: 250, type: 'room' },
+  { name: 'COMMUNICATIONS', x: 450, y: 650, w: 300, h: 150, type: 'room' },
+  { name: 'MEDICAL', x: 450, y: 850, w: 300, h: 120, type: 'room' },
+  { name: 'STORAGE', x: 100, y: 650, w: 250, h: 150, type: 'room' },
+  { name: 'CONTROL ROOM', x: 850, y: 50, w: 250, h: 150, type: 'room' },
+  { name: 'EXIT', x: 850, y: 650, w: 250, h: 150, type: 'room' },
+
+  // Hallways/Passages
+  { name: 'HALLWAY_HUB_SECURITY', x: 575, y: 200, w: 50, h: 100, type: 'hallway' },
+  { name: 'HALLWAY_HUB_LAB', x: 350, y: 400, w: 100, h: 50, type: 'hallway' },
+  { name: 'HALLWAY_HUB_GENERATOR', x: 750, y: 400, w: 100, h: 50, type: 'hallway' },
+  { name: 'HALLWAY_HUB_COMMS', x: 575, y: 550, w: 50, h: 100, type: 'hallway' },
+  { name: 'HALLWAY_COMMS_MEDICAL', x: 575, y: 800, w: 50, h: 50, type: 'hallway' },
+  { name: 'HALLWAY_LAB_STORAGE', x: 200, y: 550, w: 50, h: 100, type: 'hallway' },
+  { name: 'HALLWAY_SECURITY_CONTROL', x: 750, y: 100, w: 100, h: 50, type: 'hallway' },
+  { name: 'HALLWAY_GENERATOR_EXIT', x: 950, y: 550, w: 50, h: 100, type: 'hallway' }
+];
 
 /**
- * Clears any active timer for the given room.
+ * Checks if a point lies in any walkable room or hallway.
+ */
+export const isValidPosition = (x, y) => {
+  return WALKABLE_AREAS.some(
+    (area) => x >= area.x && x <= area.x + area.w && y >= area.y && y <= area.y + area.h
+  );
+};
+
+/**
+ * Returns the area containing the coordinates.
+ */
+export const getAreaAtPosition = (x, y) => {
+  for (const area of WALKABLE_AREAS) {
+    if (x >= area.x && x <= area.x + area.w && y >= area.y && y <= area.y + area.h) {
+      return area;
+    }
+  }
+  return null;
+};
+
+/**
+ * Resolves room name, maintaining lastRoom as fallback when transitioning hallways.
+ */
+export const getRoomAtPosition = (x, y, lastRoom) => {
+  const area = getAreaAtPosition(x, y);
+  if (area && area.type === 'room') {
+    return area.name;
+  }
+  return lastRoom || 'CENTRAL HUB';
+};
+
+// Module-level storage for timers: roomCode -> { phaseStartedAt, phaseEndsAt, intervalId }
+const roomTimers = new Map();
+// Module-level storage for player position broadcast intervals: roomCode -> intervalId
+const roomSyncIntervals = new Map();
+
+/**
+ * Clears any active timer and sync interval for the given room.
  * @param {string} roomCode
  */
 export const clearRoomTimer = (roomCode) => {
@@ -73,12 +131,61 @@ export const clearRoomTimer = (roomCode) => {
     clearInterval(existing.intervalId);
     roomTimers.delete(code);
   }
+
+  // Clear 10Hz position synchronization interval
+  const syncInt = roomSyncIntervals.get(code);
+  if (syncInt) {
+    clearInterval(syncInt);
+    roomSyncIntervals.delete(code);
+  }
 };
 
 // Register cleanup with room service
 registerRoomCleanupCallback((roomCode) => {
   clearRoomTimer(roomCode);
 });
+
+/**
+ * Starts the 10Hz broadcast interval for player positions in exploration.
+ * @param {string} roomCode
+ * @param {object} io
+ */
+export const startExplorationPositionSync = (roomCode, io) => {
+  const code = roomCode.toUpperCase().trim();
+  
+  // Clear any existing sync interval
+  const existing = roomSyncIntervals.get(code);
+  if (existing) {
+    clearInterval(existing);
+  }
+
+  const intervalId = setInterval(() => {
+    const room = rooms.get(code);
+    if (!room || !room.game || room.game.phase !== 'exploration') {
+      clearInterval(intervalId);
+      roomSyncIntervals.delete(code);
+      return;
+    }
+
+    const positions = {};
+    room.players.forEach((p) => {
+      const gp = room.game.players[p.id];
+      if (gp) {
+        positions[p.id] = {
+          x: gp.position.x,
+          y: gp.position.y,
+          room: gp.currentRoom,
+          connected: p.connected,
+        };
+      }
+    });
+
+    // Broadcast synchronization payload
+    io.to(code).emit('playerPositions', { positions });
+  }, 100);
+
+  roomSyncIntervals.set(code, intervalId);
+};
 
 /**
  * Starts a timer for a specific phase.
@@ -89,40 +196,45 @@ registerRoomCleanupCallback((roomCode) => {
  */
 export const startPhaseTimer = (roomCode, durationSeconds, io, onComplete) => {
   const code = roomCode.toUpperCase().trim();
-  clearRoomTimer(code);
+  const existing = roomTimers.get(code);
+  // Keep interval running if it exists, only override parameters
 
   const phaseStartedAt = Date.now();
   const phaseEndsAt = phaseStartedAt + durationSeconds * 1000;
 
-  const timerData = {
-    phaseStartedAt,
-    phaseEndsAt,
-    intervalId: null,
-  };
+  if (existing) {
+    existing.phaseStartedAt = phaseStartedAt;
+    existing.phaseEndsAt = phaseEndsAt;
+  } else {
+    const timerData = {
+      phaseStartedAt,
+      phaseEndsAt,
+      intervalId: null,
+    };
 
-  // Setup interval to tick every second
-  timerData.intervalId = setInterval(() => {
-    const room = rooms.get(code);
-    if (!room || !room.game) {
-      clearRoomTimer(code);
-      return;
-    }
-
-    const remaining = Math.max(0, Math.ceil((phaseEndsAt - Date.now()) / 1000));
-    room.game.timer = remaining;
-    room.game.phaseEndsAt = phaseEndsAt;
-
-    io.to(code).emit('timerUpdated', { timer: remaining, phaseEndsAt });
-
-    if (remaining <= 0) {
-      clearRoomTimer(code);
-      if (typeof onComplete === 'function') {
-        onComplete(room, io);
+    timerData.intervalId = setInterval(() => {
+      const room = rooms.get(code);
+      if (!room || !room.game) {
+        clearRoomTimer(code);
+        return;
       }
-    }
-  }, 1000);
 
-  roomTimers.set(code, timerData);
+      const remaining = Math.max(0, Math.ceil((timerData.phaseEndsAt - Date.now()) / 1000));
+      room.game.timer = remaining;
+      room.game.phaseEndsAt = timerData.phaseEndsAt;
+
+      io.to(code).emit('timerUpdated', { timer: remaining, phaseEndsAt: timerData.phaseEndsAt });
+
+      if (remaining <= 0) {
+        clearRoomTimer(code);
+        if (typeof onComplete === 'function') {
+          onComplete(room, io);
+        }
+      }
+    }, 1000);
+
+    roomTimers.set(code, timerData);
+  }
 
   // Update room object
   const room = rooms.get(code);
@@ -305,6 +417,66 @@ export const emitPrivateRoles = (room, io) => {
 };
 
 /**
+ * Validates and updates player movement intent.
+ * @returns {object} Validation result { success, rollback, roomChanged, newRoom }
+ */
+export const handlePlayerMove = (roomCode, playerId, x, y) => {
+  const room = rooms.get(roomCode.toUpperCase().trim());
+  if (!room || !room.game) return { success: false };
+
+  // Validate game phase and player state
+  if (room.game.phase !== 'exploration') {
+    return { success: false, rollback: room.game.players[playerId]?.position };
+  }
+
+  const pGame = room.game.players[playerId];
+  if (!pGame || !pGame.isAlive) {
+    return { success: false };
+  }
+
+  // Validate walkable collision boundaries
+  if (!isValidPosition(x, y)) {
+    return { success: false, rollback: pGame.position };
+  }
+
+  // Validate speed limits to prevent teleports
+  const now = Date.now();
+  const elapsed = Math.max(0.05, Math.min(2.0, (now - pGame.lastActive) / 1000));
+  pGame.lastActive = now;
+
+  const maxSpeed = 230; // Max speed allowed (units/sec)
+  const maxDist = maxSpeed * elapsed + 40; // 40 units safety jitter buffer
+
+  const dx = x - pGame.position.x;
+  const dy = y - pGame.position.y;
+  const dist = Math.hypot(dx, dy);
+
+  if (dist > maxDist) {
+    // Suspected speed hack or teleport
+    return { success: false, rollback: pGame.position };
+  }
+
+  const lastRoom = pGame.currentRoom;
+  pGame.position = { x, y };
+
+  const newRoom = getRoomAtPosition(x, y, lastRoom);
+  let roomChanged = false;
+  if (newRoom !== lastRoom) {
+    pGame.currentRoom = newRoom;
+    roomChanged = true;
+  }
+
+  // Sync state variables mapped to room.players
+  const pRoom = room.players.find((p) => p.id === playerId);
+  if (pRoom) {
+    pRoom.position = pGame.position;
+    pRoom.currentRoom = pGame.currentRoom;
+  }
+
+  return { success: true, roomChanged, newRoom };
+};
+
+/**
  * Starts the Blackout game.
  * @param {string} roomCode
  * @param {object} io
@@ -357,13 +529,17 @@ export const startGame = (roomCode, io, hostId) => {
   const roleAssignments = assignRoles(room.players);
   const gamePlayers = {};
 
-  room.players.forEach((p) => {
+  room.players.forEach((p, idx) => {
+    // Stagger initial positions inside the CENTRAL HUB (x: 450-750, y: 300-550)
+    const staggerX = 600 + (idx % 5) * 30 - 60;
+    const staggerY = 450 + Math.floor(idx / 5) * 30 - 15;
+
     gamePlayers[p.id] = {
       role: roleAssignments[p.id].role,
       team: roleAssignments[p.id].team,
       isAlive: true,
       currentRoom: 'CENTRAL HUB',
-      position: { x: 0, y: 0 },
+      position: { x: staggerX, y: staggerY },
       lastActive: Date.now(),
     };
   });
@@ -430,6 +606,9 @@ export const startGame = (roomCode, io, hostId) => {
 
       socketIo2.to(r2.roomCode).emit('phaseChanged', { phase: 'EXPLORATION' });
       broadcastRoomState(r2, socketIo2);
+
+      // Start 10Hz player position broadcast synchronizer
+      startExplorationPositionSync(r2.roomCode, socketIo2);
     });
   });
 
@@ -455,6 +634,8 @@ export const resetToLobby = (roomCode) => {
     p.score = 0;
     delete p.role;
     delete p.team;
+    delete p.position;
+    delete p.currentRoom;
   });
 
   return room;

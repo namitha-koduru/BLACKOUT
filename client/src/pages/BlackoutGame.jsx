@@ -1,9 +1,12 @@
 // pages/BlackoutGame.jsx
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUserStore } from '../store/userStore.js';
 import { useRoomStore } from '../store/roomStore.js';
 import RoleReveal from '../components/RoleReveal.jsx';
 import GameStartCountdown from '../components/GameStartCountdown.jsx';
+import FacilityMap from '../components/FacilityMap.jsx';
+import HUD from '../components/HUD.jsx';
 
 const ROLE_THEME_FALLBACKS = {
   Engineer: { color: 'text-cyan-400', icon: '⚙️' },
@@ -24,14 +27,12 @@ const BlackoutGame = () => {
   const myRoleInfo = useRoomStore((state) => state.myRoleInfo);
   const playAgain = useRoomStore((state) => state.playAgain);
 
+  const [currentLocalRoom, setCurrentLocalRoom] = useState('CENTRAL HUB');
+
   if (!room || !room.game) return null;
 
   const currentPhase = room.game.phase || 'countdown';
   const isHost = room.hostId === playerId;
-
-  const handleReturnToLobby = () => {
-    playAgain(room.roomCode, playerId);
-  };
 
   // Safe fallback UI parameters
   const myRoleName = myRoleInfo?.role || 'Crew';
@@ -39,6 +40,10 @@ const BlackoutGame = () => {
   const fallbackMeta = ROLE_THEME_FALLBACKS[myRoleName] || ROLE_THEME_FALLBACKS.Crew;
   const isSaboteurTeam = myTeamName.toLowerCase() === 'saboteur';
   const headerGlow = isSaboteurTeam ? 'border-red-500/20' : 'border-cyan-500/10';
+
+  const handleReturnToLobby = () => {
+    playAgain(room.roomCode, playerId);
+  };
 
   return (
     <div className="min-h-screen bg-[#06070d] text-white flex flex-col font-sans relative overflow-hidden">
@@ -151,37 +156,22 @@ const BlackoutGame = () => {
                 key="exploration"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="w-full flex flex-col items-center justify-center text-center p-6 h-full"
+                className="w-full h-full flex flex-col gap-4 justify-between"
               >
-                <div className="w-16 h-16 rounded-full border border-cyan-400/20 bg-cyan-400/5 flex items-center justify-center text-cyan-400 text-2xl mb-4 animate-pulse">
-                  ⚡
+                <div className="flex-grow min-h-[400px]">
+                  <FacilityMap onRoomChange={setCurrentLocalRoom} />
                 </div>
+                <HUD currentRoom={currentLocalRoom} myRoleInfo={myRoleInfo} />
                 
-                <h2 className="text-2xl font-black tracking-wider text-cyan-400 uppercase">
-                  EXPLORATION PHASE
-                </h2>
-                
-                <div className="w-full max-w-lg border border-cyan-500/10 bg-[#0d0e16]/80 p-4 rounded-xl text-left mt-6 flex flex-col gap-2">
-                  <div className="text-xs uppercase font-mono text-cyan-400 tracking-widest border-b border-cyan-500/10 pb-1 mb-2">
-                    Phase B Implementation Successful
-                  </div>
-                  <p className="text-sm text-slate-300">
-                    Your secret role assignment was decrypted securely.
-                  </p>
-                  <p className="text-xs text-slate-500 leading-relaxed">
-                    - Game start countdown timer finished successfully.<br />
-                    - Check the "Facility Log" on the right. Role details are hidden for other players, verifying server-side data secrecy constraints.<br />
-                    - Reconnecting window will query and restore the active role card and timer state seamlessly.
-                  </p>
-                </div>
-
                 {isHost && (
-                  <button
-                    onClick={handleReturnToLobby}
-                    className="mt-8 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold tracking-wider transition-all border border-red-500/20 active:scale-95 shadow-[0_0_15px_rgba(220,38,38,0.2)]"
-                  >
-                    RETURN TO LOBBY
-                  </button>
+                  <div className="text-right">
+                    <button
+                      onClick={handleReturnToLobby}
+                      className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold tracking-wider transition-all border border-red-500/20 active:scale-95 shadow-[0_0_10px_rgba(220,38,38,0.15)]"
+                    >
+                      RETURN TO LOBBY
+                    </button>
+                  </div>
                 )}
               </motion.div>
             )}
@@ -227,7 +217,7 @@ const BlackoutGame = () => {
                       <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
                     )}
 
-                    {/* Role Display */}
+                    {/* Room Display */}
                     <span className="text-xs font-mono text-slate-500 bg-black/40 px-2 py-0.5 rounded border border-white/5 uppercase">
                       {isMe ? myRoleName : p.role}
                     </span>

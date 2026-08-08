@@ -81,6 +81,37 @@ export const initSocket = (httpServer) => {
       }
     });
 
+    // --- PLAYER MOVEMENT ---
+    socket.on('playerMove', ({ roomCode, playerId, x, y }) => {
+      try {
+        const result = blackoutService.handlePlayerMove(roomCode, playerId, x, y);
+        if (!result.success && result.rollback) {
+          socket.emit('movementError', { x: result.rollback.x, y: result.rollback.y });
+        } else if (result.success && result.roomChanged) {
+          io.to(roomCode.toUpperCase().trim()).emit('playerEnteredRoom', { playerId, room: result.newRoom });
+        }
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('[socket] playerMove error:', err.message);
+      }
+    });
+
+    socket.on('playerStopped', ({ roomCode, playerId, x, y }) => {
+      try {
+        const result = blackoutService.handlePlayerMove(roomCode, playerId, x, y);
+        if (!result.success && result.rollback) {
+          socket.emit('movementError', { x: result.rollback.x, y: result.rollback.y });
+        } else {
+          const roomObj = roomService.getRoom(roomCode);
+          const newRoom = result.newRoom || (roomObj?.game?.players[playerId]?.currentRoom);
+          io.to(roomCode.toUpperCase().trim()).emit('playerStopped', { playerId, x, y, room: newRoom });
+        }
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('[socket] playerStopped error:', err.message);
+      }
+    });
+
     // --- CREATE ROOM ---
     socket.on('createRoom', ({ playerId, name, avatar, settings }, callback) => {
       try {

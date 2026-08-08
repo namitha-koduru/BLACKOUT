@@ -88,9 +88,14 @@ blackout/
 * **`playerReady`** / **`playerUnready`**: Sets player readiness status.
 * **`reconnectSession`**: Session restoration within a 25-second grace period.
 
-### Game Actions
+### Game Actions & Movement Sync
 * **`startGame`**: Validates conditions (host only, >= 4 players, all ready) and initiates phase loop.
 * **`roleAssigned`** *(Private)*: Sent to individual sockets; details player's role `{ role, team, ability, description }`.
 * **`phaseChanged`**: Alerts phase transitions (`ROLE_ASSIGNMENT`, `COUNTDOWN`, `EXPLORATION`).
 * **`timerUpdated`**: Emits remaining authoritative seconds to sync client HUDs.
 * **`playAgain`**: Returns players to lobby waiting state.
+* **`playerMove`** *(Client -> Server)*: Transmits current coordinates `{ roomCode, playerId, x, y }` during exploration.
+* **`playerStopped`** *(Client -> Server)*: Transmits final stopping coordinates when key inputs cease, instantly broadcasting to all clients.
+* **`playerPositions`** *(Server -> Client)*: 10Hz sync broadcast containing coordinates and rooms of all active players in the session.
+* **`playerEnteredRoom`** *(Server -> Client)*: Broadcasts when a player crosses a doorway boundary into a new room.
+* **`movementError`** *(Server -> Client)*: Triggered if a player's coordinates fail server checks, rolling them back.
