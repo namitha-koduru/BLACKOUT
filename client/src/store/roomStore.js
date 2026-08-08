@@ -353,4 +353,38 @@ export const useRoomStore = create((set, get) => ({
       socket.emit('playerStopped', { roomCode, playerId, x, y });
     }
   },
+
+  // --- SYSTEM REPAIR ACTIONS ---
+  startRepair: (roomCode, playerId, systemId) => {
+    const { socket } = get();
+    if (!socket) return Promise.resolve({ success: false, message: 'No socket connection' });
+
+    return new Promise((resolve) => {
+      socket.emit('startRepair', { roomCode, playerId, systemId }, (res) => {
+        resolve(res);
+      });
+    });
+  },
+
+  completeRepair: (roomCode, playerId, systemId, repairSessionId) => {
+    const { socket } = get();
+    if (!socket) return Promise.resolve({ success: false, message: 'No socket connection' });
+
+    return new Promise((resolve) => {
+      socket.emit('completeRepair', { roomCode, playerId, systemId, repairSessionId }, (res) => {
+        resolve(res);
+      });
+    });
+  },
+
+  failRepair: (roomCode, playerId, systemId, repairSessionId) => {
+    const { socket } = get();
+    if (!socket) return Promise.resolve({ success: false, message: 'No socket connection' });
+
+    return new Promise((resolve) => {
+      socket.emit('failRepair', { roomCode, playerId, systemId, repairSessionId }, (res) => {
+        resolve(res);
+      });
+    });
+  },
 }));

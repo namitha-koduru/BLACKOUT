@@ -99,3 +99,8 @@ blackout/
 * **`playerPositions`** *(Server -> Client)*: 10Hz sync broadcast containing coordinates and rooms of all active players in the session.
 * **`playerEnteredRoom`** *(Server -> Client)*: Broadcasts when a player crosses a doorway boundary into a new room.
 * **`movementError`** *(Server -> Client)*: Triggered if a player's coordinates fail server checks, rolling them back.
+
+### Facility Systems & Repair
+* **`startRepair`** *(Client -> Server)*: Request a repair session on a system console. Returns a validation token and a random mini-game type (1 to 5).
+* **`completeRepair`** *(Client -> Server)*: Submit successful completion of a mini-game, increasing system health (+20 normally, +30 for Engineer/Operator).
+* **`failRepair`** *(Client -> Server)*: Cleans up active repair sessions when players cancel or fail tasks.

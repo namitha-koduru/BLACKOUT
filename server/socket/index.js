@@ -3,6 +3,7 @@ import { Server } from 'socket.io';
 import { env } from '../config/env.js';
 import * as roomService from '../services/room.service.js';
 import * as blackoutService from '../services/blackout.service.js';
+import { cleanupPlayerRepairSessions, startRepair, completeRepair, failRepair } from '../services/system.service.js';
 
 export const initSocket = (httpServer) => {
   const io = new Server(httpServer, {
@@ -109,6 +110,55 @@ export const initSocket = (httpServer) => {
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error('[socket] playerStopped error:', err.message);
+      }
+    });
+
+    // --- SYSTEM REPAIR EVENTS ---
+    socket.on('startRepair', ({ roomCode, playerId, systemId }, callback) => {
+      try {
+        const room = roomService.getRoom(roomCode);
+        const session = startRepair(room, playerId, systemId);
+
+        if (typeof callback === 'function') {
+          callback({ success: true, session });
+        }
+      } catch (err) {
+        if (typeof callback === 'function') {
+          callback({ success: false, message: err.message });
+        }
+      }
+    });
+
+    socket.on('completeRepair', ({ roomCode, playerId, systemId, repairSessionId }, callback) => {
+      try {
+        const room = roomService.getRoom(roomCode);
+        const result = completeRepair(room, playerId, systemId, repairSessionId);
+
+        if (typeof callback === 'function') {
+          callback(result);
+        }
+
+        // Broadcast updated room state showing system health increase
+        blackoutService.broadcastRoomState(room, io);
+      } catch (err) {
+        if (typeof callback === 'function') {
+          callback({ success: false, message: err.message });
+        }
+      }
+    });
+
+    socket.on('failRepair', ({ roomCode, playerId, systemId, repairSessionId }, callback) => {
+      try {
+        const room = roomService.getRoom(roomCode);
+        failRepair(room, playerId, systemId, repairSessionId);
+
+        if (typeof callback === 'function') {
+          callback({ success: true });
+        }
+      } catch (err) {
+        if (typeof callback === 'function') {
+          callback({ success: false, message: err.message });
+        }
       }
     });
 
@@ -435,7 +485,7 @@ export const initSocket = (httpServer) => {
       // eslint-disable-next-line no-console
       console.log(`[socket] client disconnected: ${socket.id}`);
 
-      roomService.handleDisconnect(socket.id, (roomCode, playerId, updatedRoom) => {
+      const disconnectResult = roomService.handleDisconnect(socket.id, (roomCode, playerId, updatedRoom) => {
         // Callback if grace period expires and player is removed
         // eslint-disable-next-line no-console
         console.log(`[socket] Reconnect grace period expired for player: ${playerId} in room: ${roomCode}`);
@@ -451,6 +501,13 @@ export const initSocket = (httpServer) => {
         }
         io.emit('publicRoomsUpdated', roomService.getPublicRooms());
       });
+
+      if (disconnectResult) {
+        const { room, player } = disconnectResult;
+        // Clean up repair session immediately upon disconnect
+        cleanupPlayerRepairSessions(room, player.id);
+        blackoutService.broadcastRoomState(room, io);
+      }
     });
   });
 

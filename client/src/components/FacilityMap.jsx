@@ -5,9 +5,10 @@ import { useUserStore } from '../store/userStore.js';
 import Room from './Room.jsx';
 import Doorway from './Doorway.jsx';
 import Player from './Player.jsx';
+import RepairModal from './RepairModal.jsx';
 import toast from 'react-hot-toast';
 
-// 2D Facility Layout Walkable Rectangles (Mirrors Server boundaries)
+// 2D Facility Layout Walkable Rectangles
 const WALKABLE_AREAS = [
   // Rooms
   { name: 'CENTRAL HUB', x: 450, y: 300, w: 300, h: 250, type: 'room' },
@@ -31,6 +32,15 @@ const WALKABLE_AREAS = [
   { name: 'HALLWAY_GENERATOR_EXIT', x: 950, y: 550, w: 50, h: 100, type: 'hallway' }
 ];
 
+// Interactive System Console Coordinates
+const SYSTEM_CONSOLES = [
+  { id: 'generator', name: 'Generator', room: 'GENERATOR', x: 975, y: 425 },
+  { id: 'communications', name: 'Communications', room: 'COMMUNICATIONS', x: 600, y: 725 },
+  { id: 'security', name: 'Security', room: 'SECURITY', x: 600, y: 125 },
+  { id: 'medical', name: 'Medical', room: 'MEDICAL', x: 600, y: 910 },
+  { id: 'control', name: 'Control System', room: 'CONTROL ROOM', x: 975, y: 125 }
+];
+
 const isValidPosition = (x, y) => {
   return WALKABLE_AREAS.some(
     (area) => x >= area.x && x <= area.x + area.w && y >= area.y && y <= area.y + area.h
@@ -45,20 +55,25 @@ const FacilityMap = ({ onRoomChange }) => {
   const sendPlayerMove = useRoomStore((state) => state.sendPlayerMove);
   const sendPlayerStopped = useRoomStore((state) => state.sendPlayerStopped);
   const setOnMovementError = useRoomStore((state) => state.setOnMovementError);
+  const startRepair = useRoomStore((state) => state.startRepair);
 
-  // Fallback initial position (Server dictates starting stagger coordinates)
+  // Fallback initial position
   const myInitialPos = room?.game?.players[playerId]?.position || { x: 600, y: 450 };
 
   const [posX, setPosX] = useState(myInitialPos.x);
   const [posY, setPosY] = useState(myInitialPos.y);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600, scale: 0.5 });
 
+  // System repair state
+  const [nearSystem, setNearSystem] = useState(null); // { id, name, health }
+  const [activeRepairSession, setActiveRepairSession] = useState(null); // { systemId, systemName, session }
+
   const activeKeys = useRef({});
   const lastEmitTime = useRef(0);
   const wasMoving = useRef(false);
   const loopRef = useRef(null);
 
-  // Sync state if server dictates position shifts (e.g. game start / reconnects)
+  // Sync state if server dictates position shifts
   useEffect(() => {
     if (room?.game?.players[playerId]?.position) {
       const serverPos = room.game.players[playerId].position;
@@ -88,7 +103,7 @@ const FacilityMap = ({ onRoomChange }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Keyboard Event Listeners
+  // Keyboard Event Listeners (WASD + Arrows)
   useEffect(() => {
     const handleKeyDown = (e) => {
       const key = e.key.toLowerCase();
@@ -122,7 +137,31 @@ const FacilityMap = ({ onRoomChange }) => {
     return () => setOnMovementError(null);
   }, [setOnMovementError]);
 
-  // Movement loop
+  // Repair start listener (Triggered by pressing 'e')
+  useEffect(() => {
+    const handleKeyDown = async (e) => {
+      if (e.key.toLowerCase() === 'e') {
+        // Enforce validations: must be near a system, and not already active in repair
+        if (nearSystem && !activeRepairSession && room?.gameState === 'exploration') {
+          const res = await startRepair(room.roomCode, playerId, nearSystem.id);
+          if (res.success) {
+            setActiveRepairSession({
+              systemId: nearSystem.id,
+              systemName: nearSystem.name,
+              session: res.session,
+            });
+          } else {
+            toast.error(res.message || 'System interface unresponsive.');
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [nearSystem, activeRepairSession, room, playerId, startRepair]);
+
+  // Movement update loop
   useEffect(() => {
     let lastTime = performance.now();
 
@@ -133,20 +172,21 @@ const FacilityMap = ({ onRoomChange }) => {
       let dx = 0;
       let dy = 0;
 
-      if (activeKeys.current['w'] || activeKeys.current['arrowup']) dy -= 1;
-      if (activeKeys.current['s'] || activeKeys.current['arrowdown']) dy += 1;
-      if (activeKeys.current['a'] || activeKeys.current['arrowleft']) dx -= 1;
-      if (activeKeys.current['d'] || activeKeys.current['arrowright']) dx += 1;
+      // If active in a repair mini-game, block player movement
+      if (!activeRepairSession) {
+        if (activeKeys.current['w'] || activeKeys.current['arrowup']) dy -= 1;
+        if (activeKeys.current['s'] || activeKeys.current['arrowdown']) dy += 1;
+        if (activeKeys.current['a'] || activeKeys.current['arrowleft']) dx -= 1;
+        if (activeKeys.current['d'] || activeKeys.current['arrowright']) dx += 1;
+      }
 
       if (dx !== 0 || dy !== 0) {
-        // Diagonal Speed normalization
         if (dx !== 0 && dy !== 0) {
           dx *= 0.7071;
           dy *= 0.7071;
         }
 
-        // Apply speed rate
-        const speed = 0.18; // units per millisecond (approx 180 units/sec)
+        const speed = 0.18;
         const nextX = Math.round(posX + dx * speed * elapsedMs);
         const nextY = Math.round(posY + dy * speed * elapsedMs);
 
@@ -163,7 +203,7 @@ const FacilityMap = ({ onRoomChange }) => {
             onRoomChange(currentArea.name);
           }
 
-          // Throttle movement network updates (approx every 50ms)
+          // Throttle movement network updates
           const now = Date.now();
           if (now - lastEmitTime.current >= 50) {
             sendPlayerMove(room.roomCode, playerId, nextX, nextY);
@@ -171,22 +211,52 @@ const FacilityMap = ({ onRoomChange }) => {
           }
         }
       } else if (wasMoving.current) {
-        // Emit final stopping coordinate immediately
         wasMoving.current = false;
         sendPlayerStopped(room.roomCode, playerId, posX, posY);
       }
+
+      // Proximity check to system consoles
+      let closestSystem = null;
+      let minDistance = 150; // Maximum interaction radius
+
+      SYSTEM_CONSOLES.forEach((sys) => {
+        const sysState = room?.game?.systems?.[sys.id];
+        if (!sysState || sysState.health >= 100) return; // Ignore healthy systems
+
+        const dist = Math.hypot(posX - sys.x, posY - sys.y);
+        if (dist < minDistance) {
+          minDistance = dist;
+          closestSystem = { id: sys.id, name: sys.name, health: sysState.health };
+        }
+      });
+
+      setNearSystem(closestSystem);
 
       loopRef.current = requestAnimationFrame(gameLoop);
     };
 
     loopRef.current = requestAnimationFrame(gameLoop);
     return () => cancelAnimationFrame(loopRef.current);
-  }, [posX, posY, room.roomCode, playerId, sendPlayerMove, sendPlayerStopped, onRoomChange]);
+  }, [posX, posY, room, playerId, sendPlayerMove, sendPlayerStopped, onRoomChange, activeRepairSession]);
 
-  // Center coordinate of map relative container offsets
   const mapCenterOffset = {
     x: (dimensions.width - 1200 * dimensions.scale) / 2,
     y: (dimensions.height - 1000 * dimensions.scale) / 2,
+  };
+
+  const handleProximityRepairStart = async () => {
+    if (nearSystem && !activeRepairSession) {
+      const res = await startRepair(room.roomCode, playerId, nearSystem.id);
+      if (res.success) {
+        setActiveRepairSession({
+          systemId: nearSystem.id,
+          systemName: nearSystem.name,
+          session: res.session,
+        });
+      } else {
+        toast.error(res.message || 'System interface unresponsive.');
+      }
+    }
   };
 
   return (
@@ -194,7 +264,7 @@ const FacilityMap = ({ onRoomChange }) => {
       ref={mapRef}
       className="relative w-full h-full min-h-[480px] bg-[#030407] rounded-2xl border border-cyan-500/10 shadow-inner overflow-hidden select-none"
     >
-      {/* GRID NET DECORATION */}
+      {/* GRID DECORATION */}
       <div className="absolute inset-0 pointer-events-none opacity-5 bg-[linear-gradient(to_right,#06b6d4_1px,transparent_1px),linear-gradient(to_bottom,#06b6d4_1px,transparent_1px)] bg-[size:30px_30px]" />
 
       <div
@@ -205,7 +275,7 @@ const FacilityMap = ({ onRoomChange }) => {
           height: 1000,
         }}
       >
-        {/* Draw Hallways first so rooms overlay their doors */}
+        {/* Draw Hallways */}
         {WALKABLE_AREAS.filter((a) => a.type === 'hallway').map((hall) => (
           <Doorway key={hall.name} x={hall.x} y={hall.y} w={hall.w} h={hall.h} />
         ))}
@@ -214,6 +284,31 @@ const FacilityMap = ({ onRoomChange }) => {
         {WALKABLE_AREAS.filter((a) => a.type === 'room').map((r) => (
           <Room key={r.name} name={r.name} x={r.x} y={r.y} w={r.w} h={r.h} />
         ))}
+
+        {/* Draw System Consoles */}
+        {SYSTEM_CONSOLES.map((sys) => {
+          const sysState = room?.game?.systems?.[sys.id];
+          const isDamaged = sysState && sysState.health < 100;
+          return (
+            <div
+              key={sys.id}
+              className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-none"
+              style={{ left: sys.x, top: sys.y }}
+            >
+              {/* Flashing Light Indicator */}
+              <div
+                className={`w-3.5 h-3.5 rounded-full border border-black animate-pulse shadow-md ${
+                  isDamaged
+                    ? 'bg-red-500 shadow-red-500/60'
+                    : 'bg-emerald-500 shadow-emerald-500/60'
+                }`}
+              />
+              <span className="text-[7px] font-black text-slate-400 mt-1 uppercase font-mono tracking-wider">
+                {sys.name} ({sysState ? `${sysState.health}%` : '100%'})
+              </span>
+            </div>
+          );
+        })}
 
         {/* Draw other players */}
         {Object.keys(playerPositions).map((pId) => {
@@ -251,6 +346,32 @@ const FacilityMap = ({ onRoomChange }) => {
           );
         })()}
       </div>
+
+      {/* FLOATING PROXIMITY INTERACTION BANNER */}
+      {nearSystem && !activeRepairSession && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/90 border border-cyan-500/30 rounded-xl px-4 py-2 flex items-center gap-3 z-30 shadow-lg animate-bounce select-none">
+          <span className="bg-cyan-500 text-black px-1.5 py-0.5 rounded font-black text-xs font-mono">E</span>
+          <span className="text-xs font-bold text-slate-100">
+            REPAIR {nearSystem.name} ({nearSystem.health}%)
+          </span>
+          <button
+            onClick={handleProximityRepairStart}
+            className="px-2.5 py-0.5 bg-cyan-500 hover:bg-cyan-400 text-black text-[10px] font-black uppercase tracking-wider rounded transition-colors"
+          >
+            START
+          </button>
+        </div>
+      )}
+
+      {/* REPAIR INTERACTIVE MODAL */}
+      {activeRepairSession && (
+        <RepairModal
+          systemId={activeRepairSession.systemId}
+          systemName={activeRepairSession.systemName}
+          session={activeRepairSession.session}
+          onClose={() => setActiveRepairSession(null)}
+        />
+      )}
     </div>
   );
 };

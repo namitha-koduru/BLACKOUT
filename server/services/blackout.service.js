@@ -1,5 +1,6 @@
 // services/blackout.service.js
 import { rooms, registerRoomCleanupCallback } from './room.service.js';
+import { createSystems } from './system.service.js';
 
 // Centralized role metadata
 export const ROLES = {
@@ -552,13 +553,7 @@ export const startGame = (roomCode, io, hostId) => {
     phaseEndsAt: Date.now() + 8000,
     currentRound: 1,
     players: gamePlayers,
-    systems: {
-      generator: { name: 'Generator', health: 100 },
-      communications: { name: 'Communications', health: 100 },
-      security: { name: 'Security', health: 100 },
-      medical: { name: 'Medical', health: 100 },
-      control: { name: 'Control System', health: 100 },
-    },
+    systems: createSystems(),
     evidence: [],
     sabotages: {
       cooldowns: {},

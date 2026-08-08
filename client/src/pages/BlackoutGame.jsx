@@ -7,6 +7,7 @@ import RoleReveal from '../components/RoleReveal.jsx';
 import GameStartCountdown from '../components/GameStartCountdown.jsx';
 import FacilityMap from '../components/FacilityMap.jsx';
 import HUD from '../components/HUD.jsx';
+import SystemPanel from '../components/SystemPanel.jsx';
 
 const ROLE_THEME_FALLBACKS = {
   Engineer: { color: 'text-cyan-400', icon: '⚙️' },
@@ -108,22 +109,15 @@ const BlackoutGame = () => {
             </h3>
             
             {/* System list */}
-            <div className="flex flex-col gap-3 flex-1 justify-center">
+            <div className="flex flex-col gap-3 overflow-y-auto max-h-[320px] pr-1">
               {Object.keys(room.game.systems).map((sysKey) => {
                 const sys = room.game.systems[sysKey];
                 return (
-                  <div key={sysKey} className="flex flex-col gap-1">
-                    <div className="flex justify-between text-xs font-semibold">
-                      <span className="text-slate-300">{sys.name}</span>
-                      <span className="text-cyan-400">{sys.health}%</span>
-                    </div>
-                    <div className="w-full bg-cyan-950/40 border border-cyan-500/10 h-2 rounded-full overflow-hidden">
-                      <div
-                        className="bg-gradient-to-r from-cyan-500 to-blue-500 h-full transition-all duration-300"
-                        style={{ width: `${sys.health}%` }}
-                      ></div>
-                    </div>
-                  </div>
+                  <SystemPanel
+                    key={sysKey}
+                    system={sys}
+                    isNear={false}
+                  />
                 );
               })}
             </div>
