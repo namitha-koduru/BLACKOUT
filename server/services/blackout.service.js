@@ -1,6 +1,7 @@
 // services/blackout.service.js
 import { rooms, registerRoomCleanupCallback } from './room.service.js';
-import { createSystems } from './system.service.js';
+import { createSystems, getDerivedStatus } from './system.service.js';
+import { updateActiveSabotages } from './sabotage.service.js';
 
 // Centralized role metadata
 export const ROLES = {
@@ -367,6 +368,47 @@ export const sanitizeRoomForPlayer = (room, playerId) => {
     });
 
     sanitized.game.players = sanitizedGamePlayers;
+
+    // --- SABOTAGE SYSTEM SANITIZATIONS ---
+    updateActiveSabotages(sanitized);
+
+    const isReceiverSaboteur = room.game.players[playerId]?.team === 'saboteur';
+
+    if (sanitized.game.sabotages) {
+      // 1. Hide sourcePlayerId from active sabotages list for Crew
+      const sanitizedActive = {};
+      Object.keys(sanitized.game.sabotages.active).forEach((sabId) => {
+        const sab = sanitized.game.sabotages.active[sabId];
+        const sabCopy = { ...sab };
+        if (!isReceiverSaboteur) {
+          delete sabCopy.sourcePlayerId;
+        }
+        sanitizedActive[sabId] = sabCopy;
+      });
+      sanitized.game.sabotages.active = sanitizedActive;
+
+      // 2. Hide raw cooldown list from Crew
+      if (!isReceiverSaboteur) {
+        sanitized.game.sabotages.cooldowns = {};
+      }
+    }
+
+    // 3. System health corruption display masking
+    if (sanitized.game.systems) {
+      Object.keys(sanitized.game.systems).forEach((sysId) => {
+        const sys = sanitized.game.systems[sysId];
+        const corruptData = sanitized.game.sabotages?.corruptedSystems?.[sysId];
+        if (corruptData && Date.now() < corruptData.expiresAt && !isReceiverSaboteur) {
+          sys.health = corruptData.falseHealth;
+          sys.status = getDerivedStatus(corruptData.falseHealth);
+        }
+      });
+    }
+
+    // 4. Update root game attributes for direct socket indicators
+    sanitized.game.blackoutActive = sanitized.game.blackoutActive || false;
+    sanitized.game.communicationsDisabled = sanitized.game.communicationsDisabled || false;
+    sanitized.game.securityDegraded = sanitized.game.securityDegraded || false;
   }
 
   return sanitized;
@@ -438,6 +480,17 @@ export const handlePlayerMove = (roomCode, playerId, x, y) => {
   // Validate walkable collision boundaries
   if (!isValidPosition(x, y)) {
     return { success: false, rollback: pGame.position };
+  }
+
+  // Update active sabotages and check locked doorways
+  updateActiveSabotages(room);
+  const targetArea = getAreaAtPosition(x, y);
+  if (targetArea && targetArea.type === 'hallway') {
+    const isLocked = room.game.sabotages?.lockedDoors?.[targetArea.name];
+    if (isLocked && Date.now() < isLocked) {
+      // Locked door blockage: rollback position!
+      return { success: false, rollback: pGame.position };
+    }
   }
 
   // Validate speed limits to prevent teleports
@@ -555,9 +608,20 @@ export const startGame = (roomCode, io, hostId) => {
     players: gamePlayers,
     systems: createSystems(),
     evidence: [],
+    blackoutActive: false,
+    communicationsDisabled: false,
+    securityDegraded: false,
     sabotages: {
+      active: {},
       cooldowns: {},
-      active: [],
+      lockedDoors: {},
+      blackoutActive: false,
+      communicationsDisabled: false,
+      securityDegraded: false,
+      corruptedSystems: {},
+      communicationsDisabledExpiresAt: 0,
+      securityDegradedExpiresAt: 0,
+      blackoutActiveExpiresAt: 0,
     },
     timeline: [
       {

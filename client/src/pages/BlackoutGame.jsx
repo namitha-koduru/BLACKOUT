@@ -8,6 +8,8 @@ import GameStartCountdown from '../components/GameStartCountdown.jsx';
 import FacilityMap from '../components/FacilityMap.jsx';
 import HUD from '../components/HUD.jsx';
 import SystemPanel from '../components/SystemPanel.jsx';
+import SabotagePanel from '../components/SabotagePanel.jsx';
+import SabotageButton from '../components/SabotageButton.jsx';
 
 const ROLE_THEME_FALLBACKS = {
   Engineer: { color: 'text-cyan-400', icon: '⚙️' },
@@ -27,8 +29,10 @@ const BlackoutGame = () => {
   const timer = useRoomStore((state) => state.timer);
   const myRoleInfo = useRoomStore((state) => state.myRoleInfo);
   const playAgain = useRoomStore((state) => state.playAgain);
+  const sendChatMessage = useRoomStore((state) => state.sendChatMessage);
 
   const [currentLocalRoom, setCurrentLocalRoom] = useState('CENTRAL HUB');
+  const [sabPanelOpen, setSabPanelOpen] = useState(false);
 
   if (!room || !room.game) return null;
 
@@ -144,7 +148,7 @@ const BlackoutGame = () => {
               <GameStartCountdown key="countdown" timer={timer} />
             )}
 
-            {/* STUB/EXPLORATION PHASE OVERVIEW */}
+            {/* EXPLORATION PHASE */}
             {currentPhase === 'exploration' && (
               <motion.div
                 key="exploration"
@@ -171,60 +175,127 @@ const BlackoutGame = () => {
             )}
           </AnimatePresence>
 
+          {/* SABOTEUR FLOATING DASHBOARD & TOGGLE */}
+          {currentPhase === 'exploration' && isSaboteurTeam && (
+            <>
+              <SabotageButton onClick={() => setSabPanelOpen(!sabPanelOpen)} isOpen={sabPanelOpen} />
+              {sabPanelOpen && (
+                <div className="fixed bottom-40 right-6 w-80 z-40">
+                  <SabotagePanel />
+                </div>
+              )}
+            </>
+          )}
+
         </section>
 
-        {/* RIGHT COLUMN: ACTIVE PLAYERS / SECURITY ROSTER */}
-        <section className="w-full lg:w-1/4 border border-cyan-500/10 bg-[#0a0b12]/50 rounded-xl p-5 flex flex-col">
-          <h3 className="text-xs uppercase tracking-widest text-cyan-400 font-bold border-b border-cyan-500/10 pb-2 mb-3">
-            FACILITY LOG
-          </h3>
+        {/* RIGHT COLUMN: ACTIVE PLAYERS / SECURITY LOGS & CHAT */}
+        <section className="w-full lg:w-1/4 border border-cyan-500/10 bg-[#0a0b12]/50 rounded-xl p-5 flex flex-col justify-between">
+          <div>
+            <h3 className="text-xs uppercase tracking-widest text-cyan-400 font-bold border-b border-cyan-500/10 pb-2 mb-3">
+              FACILITY LOG
+            </h3>
 
-          <div className="flex flex-col gap-2 overflow-y-auto flex-1 max-h-[350px]">
-            {room.players.map((p) => {
-              const isMe = p.id === playerId;
-              const isDisconnected = !p.connected;
-              
-              return (
-                <div
-                  key={p.id}
-                  className={`flex items-center justify-between p-3 rounded-lg border text-sm transition-all ${
-                    isMe
-                      ? 'border-cyan-500/20 bg-cyan-500/5'
-                      : 'border-slate-800 bg-slate-900/40'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-lg">{p.avatar}</span>
-                    <span className={`font-semibold ${isMe ? 'text-slate-100' : 'text-slate-300'}`}>
-                      {p.name}
-                      {isMe && <span className="text-[10px] text-cyan-400 ml-1.5">(You)</span>}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {/* Status Badge */}
-                    {isDisconnected ? (
-                      <span className="text-[10px] text-red-500 border border-red-500/30 px-1.5 py-0.2 rounded bg-red-500/5 uppercase tracking-wide">
-                        DISCONN
+            <div className="flex flex-col gap-2 overflow-y-auto max-h-[220px]">
+              {room.players.map((p) => {
+                const isMe = p.id === playerId;
+                const isDisconnected = !p.connected;
+                
+                return (
+                  <div
+                    key={p.id}
+                    className={`flex items-center justify-between p-2.5 rounded-lg border text-xs transition-all ${
+                      isMe
+                        ? 'border-cyan-500/20 bg-cyan-500/5'
+                        : 'border-slate-800 bg-slate-900/40'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">{p.avatar}</span>
+                      <span className={`font-semibold ${isMe ? 'text-slate-100' : 'text-slate-300'}`}>
+                        {p.name}
+                        {isMe && <span className="text-[9px] text-cyan-400 ml-1">(You)</span>}
                       </span>
-                    ) : (
-                      <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-                    )}
+                    </div>
 
-                    {/* Room Display */}
-                    <span className="text-xs font-mono text-slate-500 bg-black/40 px-2 py-0.5 rounded border border-white/5 uppercase">
-                      {isMe ? myRoleName : p.role}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {isDisconnected ? (
+                        <span className="text-[8px] text-red-500 border border-red-500/30 px-1 py-0.1 rounded bg-red-500/5 uppercase tracking-wide">
+                          DISCONN
+                        </span>
+                      ) : (
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                      )}
+
+                      <span className="text-[9px] font-mono text-slate-500 bg-black/40 px-1.5 py-0.2 rounded border border-white/5 uppercase">
+                        {isMe ? myRoleName : p.role}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
 
-          <div className="border-t border-cyan-500/10 pt-3 mt-3">
-            <div className="text-[10px] uppercase font-mono tracking-wider text-slate-500">
-              Room Code: <span className="text-amber-500 font-black tracking-widest">{room.roomCode}</span>
+          {/* MINI CHAT LOG (BLOCKED IF COMMS DISABLED) */}
+          <div className="border-t border-cyan-500/10 pt-3 mt-3 flex flex-col h-48 select-none">
+            <span className="text-[9px] uppercase font-mono tracking-wider text-slate-500 mb-1.5 text-left">
+              Facility Comms Channel
+            </span>
+            
+            {/* Messages feed */}
+            <div className="flex-1 overflow-y-auto flex flex-col gap-1 pr-1 mb-2 max-h-24">
+              {room.chat.slice(-15).map((msg, i) => {
+                const isSystem = msg.senderId === 'system';
+                const isMe = msg.senderId === playerId;
+                return (
+                  <div key={i} className="text-left text-[11px] leading-snug">
+                    {!isSystem && (
+                      <span className={`font-black mr-1 ${isMe ? 'text-cyan-400' : 'text-slate-400'}`}>
+                        {msg.senderName}:
+                      </span>
+                    )}
+                    <span className={isSystem ? 'text-amber-500 italic' : 'text-slate-200'}>
+                      {msg.text}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
+
+            {/* Message send form */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const form = e.target;
+                const text = form.elements.msgInput.value;
+                if (text && text.trim() !== '') {
+                  sendChatMessage(room.roomCode, playerId, text.trim());
+                  form.reset();
+                }
+              }}
+              className="flex gap-1.5 mt-auto"
+            >
+              <input
+                id="msgInput"
+                name="msgInput"
+                type="text"
+                disabled={room.game.communicationsDisabled}
+                placeholder={room.game.communicationsDisabled ? '📡 COMMUNICATIONS OFFLINE' : 'Broadcast to channel...'}
+                className="flex-grow rounded bg-black/40 border border-cyan-500/10 px-2 py-1 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500/40 disabled:border-red-500/30 disabled:text-red-500/40 disabled:placeholder-red-500/20"
+              />
+              <button
+                type="submit"
+                disabled={room.game.communicationsDisabled}
+                className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded text-xs font-bold disabled:bg-slate-900 disabled:text-slate-600"
+              >
+                Send
+              </button>
+            </form>
+          </div>
+
+          <div className="border-t border-cyan-500/10 pt-2 mt-2 text-[10px] uppercase font-mono tracking-wider text-slate-500 text-left">
+            Room Code: <span className="text-amber-500 font-black tracking-widest">{room.roomCode}</span>
           </div>
         </section>
       </main>

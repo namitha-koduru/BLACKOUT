@@ -65,8 +65,8 @@ const FacilityMap = ({ onRoomChange }) => {
   const [dimensions, setDimensions] = useState({ width: 800, height: 600, scale: 0.5 });
 
   // System repair state
-  const [nearSystem, setNearSystem] = useState(null); // { id, name, health }
-  const [activeRepairSession, setActiveRepairSession] = useState(null); // { systemId, systemName, session }
+  const [nearSystem, setNearSystem] = useState(null);
+  const [activeRepairSession, setActiveRepairSession] = useState(null);
 
   const activeKeys = useRef({});
   const lastEmitTime = useRef(0);
@@ -141,7 +141,6 @@ const FacilityMap = ({ onRoomChange }) => {
   useEffect(() => {
     const handleKeyDown = async (e) => {
       if (e.key.toLowerCase() === 'e') {
-        // Enforce validations: must be near a system, and not already active in repair
         if (nearSystem && !activeRepairSession && room?.gameState === 'exploration') {
           const res = await startRepair(room.roomCode, playerId, nearSystem.id);
           if (res.success) {
@@ -172,7 +171,6 @@ const FacilityMap = ({ onRoomChange }) => {
       let dx = 0;
       let dy = 0;
 
-      // If active in a repair mini-game, block player movement
       if (!activeRepairSession) {
         if (activeKeys.current['w'] || activeKeys.current['arrowup']) dy -= 1;
         if (activeKeys.current['s'] || activeKeys.current['arrowdown']) dy += 1;
@@ -190,7 +188,19 @@ const FacilityMap = ({ onRoomChange }) => {
         const nextX = Math.round(posX + dx * speed * elapsedMs);
         const nextY = Math.round(posY + dy * speed * elapsedMs);
 
-        if (isValidPosition(nextX, nextY)) {
+        // Check Local Locked Doors collision bounds
+        let pathIsBlockedByLock = false;
+        const targetArea = WALKABLE_AREAS.find(
+          (area) => nextX >= area.x && nextX <= area.x + area.w && nextY >= area.y && nextY <= area.y + area.h
+        );
+        if (targetArea && targetArea.type === 'hallway') {
+          const lockExpiresAt = room?.game?.sabotages?.lockedDoors?.[targetArea.name];
+          if (lockExpiresAt && Date.now() < lockExpiresAt) {
+            pathIsBlockedByLock = true;
+          }
+        }
+
+        if (isValidPosition(nextX, nextY) && !pathIsBlockedByLock) {
           setPosX(nextX);
           setPosY(nextY);
           wasMoving.current = true;
@@ -217,11 +227,11 @@ const FacilityMap = ({ onRoomChange }) => {
 
       // Proximity check to system consoles
       let closestSystem = null;
-      let minDistance = 150; // Maximum interaction radius
+      let minDistance = 150;
 
       SYSTEM_CONSOLES.forEach((sys) => {
         const sysState = room?.game?.systems?.[sys.id];
-        if (!sysState || sysState.health >= 100) return; // Ignore healthy systems
+        if (!sysState || sysState.health >= 100) return;
 
         const dist = Math.hypot(posX - sys.x, posY - sys.y);
         if (dist < minDistance) {
@@ -259,6 +269,8 @@ const FacilityMap = ({ onRoomChange }) => {
     }
   };
 
+  const isBlackoutActive = room?.game?.blackoutActive || false;
+
   return (
     <div
       ref={mapRef}
@@ -268,17 +280,40 @@ const FacilityMap = ({ onRoomChange }) => {
       <div className="absolute inset-0 pointer-events-none opacity-5 bg-[linear-gradient(to_right,#06b6d4_1px,transparent_1px),linear-gradient(to_bottom,#06b6d4_1px,transparent_1px)] bg-[size:30px_30px]" />
 
       <div
-        className="absolute origin-top-left transition-transform duration-75"
+        className="absolute origin-top-left transition-all duration-300"
         style={{
           transform: `translate(${mapCenterOffset.x}px, ${mapCenterOffset.y}px) scale(${dimensions.scale})`,
           width: 1200,
           height: 1000,
+          filter: isBlackoutActive ? 'brightness(0.18) contrast(1.15)' : 'none',
         }}
       >
-        {/* Draw Hallways */}
-        {WALKABLE_AREAS.filter((a) => a.type === 'hallway').map((hall) => (
-          <Doorway key={hall.name} x={hall.x} y={hall.y} w={hall.w} h={hall.h} />
-        ))}
+        {/* Draw Hallways & Locked Overlays */}
+        {WALKABLE_AREAS.filter((a) => a.type === 'hallway').map((hall) => {
+          const lockExpiresAt = room?.game?.sabotages?.lockedDoors?.[hall.name];
+          const isLocked = lockExpiresAt && Date.now() < lockExpiresAt;
+
+          return (
+            <React.Fragment key={hall.name}>
+              <Doorway x={hall.x} y={hall.y} w={hall.w} h={hall.h} />
+              {isLocked && (
+                <div
+                  className="absolute bg-red-950/70 border-2 border-dashed border-red-500/60 rounded flex items-center justify-center z-10 transition-all select-none shadow-[inset_0_0_12px_rgba(239,68,68,0.25)] animate-pulse"
+                  style={{
+                    left: hall.x,
+                    top: hall.y,
+                    width: hall.w,
+                    height: hall.h,
+                  }}
+                >
+                  <span className="text-[14px] leading-none drop-shadow-[0_0_4px_rgba(0,0,0,0.8)] select-none">
+                    🔒
+                  </span>
+                </div>
+              )}
+            </React.Fragment>
+          );
+        })}
 
         {/* Draw Rooms */}
         {WALKABLE_AREAS.filter((a) => a.type === 'room').map((r) => (
@@ -292,15 +327,12 @@ const FacilityMap = ({ onRoomChange }) => {
           return (
             <div
               key={sys.id}
-              className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-none"
+              className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-none animate-pulse"
               style={{ left: sys.x, top: sys.y }}
             >
-              {/* Flashing Light Indicator */}
               <div
-                className={`w-3.5 h-3.5 rounded-full border border-black animate-pulse shadow-md ${
-                  isDamaged
-                    ? 'bg-red-500 shadow-red-500/60'
-                    : 'bg-emerald-500 shadow-emerald-500/60'
+                className={`w-3.5 h-3.5 rounded-full border border-black shadow-md ${
+                  isDamaged ? 'bg-red-500 shadow-red-500/60' : 'bg-emerald-500 shadow-emerald-500/60'
                 }`}
               />
               <span className="text-[7px] font-black text-slate-400 mt-1 uppercase font-mono tracking-wider">
@@ -360,6 +392,16 @@ const FacilityMap = ({ onRoomChange }) => {
           >
             START
           </button>
+        </div>
+      )}
+
+      {/* FLOATING BLACKOUT NOTIFICATION BANNER */}
+      {isBlackoutActive && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-950/80 border border-red-500/30 rounded-xl px-4 py-2 z-30 shadow-lg flex items-center gap-2 select-none animate-pulse">
+          <span className="text-red-500 font-black">⚠️</span>
+          <span className="text-xs font-mono font-black text-red-400 uppercase tracking-wider">
+            SYSTEM BLACKOUT: POWER FAILURE
+          </span>
         </div>
       )}
 

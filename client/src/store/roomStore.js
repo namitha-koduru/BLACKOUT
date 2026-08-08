@@ -387,4 +387,16 @@ export const useRoomStore = create((set, get) => ({
       });
     });
   },
+
+  // --- SABOTAGE ACTIONS ---
+  sendSabotageRequest: (roomCode, playerId, sabotageType, targetId) => {
+    const { socket } = get();
+    if (!socket) return Promise.resolve({ success: false, message: 'No socket connection' });
+
+    return new Promise((resolve) => {
+      socket.emit('sabotageRequest', { roomCode, playerId, sabotageType, targetId }, (res) => {
+        resolve(res);
+      });
+    });
+  },
 }));

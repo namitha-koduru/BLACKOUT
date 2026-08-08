@@ -4,6 +4,7 @@ import { env } from '../config/env.js';
 import * as roomService from '../services/room.service.js';
 import * as blackoutService from '../services/blackout.service.js';
 import { cleanupPlayerRepairSessions, startRepair, completeRepair, failRepair } from '../services/system.service.js';
+import { useSabotage } from '../services/sabotage.service.js';
 
 export const initSocket = (httpServer) => {
   const io = new Server(httpServer, {
@@ -155,6 +156,25 @@ export const initSocket = (httpServer) => {
         if (typeof callback === 'function') {
           callback({ success: true });
         }
+      } catch (err) {
+        if (typeof callback === 'function') {
+          callback({ success: false, message: err.message });
+        }
+      }
+    });
+
+    // --- SABOTAGE ABILITY EVENTS ---
+    socket.on('sabotageRequest', ({ roomCode, playerId, sabotageType, targetId }, callback) => {
+      try {
+        const room = roomService.getRoom(roomCode);
+        const session = useSabotage(room, playerId, sabotageType, targetId);
+
+        if (typeof callback === 'function') {
+          callback({ success: true, session });
+        }
+
+        // Broadcast the updated state to all room sockets
+        blackoutService.broadcastRoomState(room, io);
       } catch (err) {
         if (typeof callback === 'function') {
           callback({ success: false, message: err.message });
@@ -413,6 +433,13 @@ export const initSocket = (httpServer) => {
     // --- CHAT MESSAGE ---
     socket.on('chatMessage', ({ roomCode, playerId, text }, callback) => {
       try {
+        const room = roomService.getRoom(roomCode);
+
+        // Block chat transmissions if communications sabotage is active
+        if (room && room.game && room.game.communicationsDisabled) {
+          throw new Error('COMMUNICATIONS OFFLINE');
+        }
+
         if (!text || text.trim() === '') {
           throw new Error('Message text cannot be empty.');
         }
