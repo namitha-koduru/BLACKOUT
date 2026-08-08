@@ -10,7 +10,7 @@ import Lobby from './pages/Lobby.jsx';
 
 function App() {
   useEffect(() => {
-    const savedTheme = localStorage.getItem('mysterybox_setting_theme') || 'party';
+    const savedTheme = localStorage.getItem('blackout_setting_theme') || 'classic';
     document.body.classList.remove('theme-party', 'theme-neon', 'theme-classic');
     document.body.classList.add(`theme-${savedTheme}`);
   }, []);

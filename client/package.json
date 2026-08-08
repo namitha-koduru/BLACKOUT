@@ -1,7 +1,7 @@
 {
-  "name": "mystery-box-client",
+  "name": "blackout-client",
   "version": "1.0.0",
-  "description": "Mystery Box - real-time multiplayer party game frontend",
+  "description": "BLACKOUT - real-time multiplayer emergency facility survival game frontend",
   "type": "module",
   "scripts": {
     "dev": "vite",

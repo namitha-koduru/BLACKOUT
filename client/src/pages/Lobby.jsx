@@ -1,36 +1,43 @@
 // pages/Lobby.jsx
-import { useEffect, useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUserStore } from '../store/userStore.js';
 import { useRoomStore } from '../store/roomStore.js';
 import { useSocket } from '../hooks/useSocket.js';
-import toast from 'react-hot-toast';
+import SettingsModal from '../components/SettingsModal.jsx';
 import BlackoutGame from './BlackoutGame.jsx';
 import WinnerScreen from './WinnerScreen.jsx';
-import SettingsModal from '../components/SettingsModal.jsx';
+import toast from 'react-hot-toast';
 
 const Lobby = () => {
-  const navigate = useNavigate();
   const { roomCode } = useParams();
+  const navigate = useNavigate();
   const { isConnected } = useSocket();
 
   const playerId = useUserStore((state) => state.playerId);
   const name = useUserStore((state) => state.name);
+  const avatar = useUserStore((state) => state.avatar);
 
   const room = useRoomStore((state) => state.room);
+  const loading = useRoomStore((state) => state.loading);
+  const error = useRoomStore((state) => state.error);
+  const kicked = useRoomStore((state) => state.kicked);
+
+  const joinRoom = useRoomStore((state) => state.joinRoom);
   const leaveRoom = useRoomStore((state) => state.leaveRoom);
-  const kickPlayer = useRoomStore((state) => state.kickPlayer);
-  const transferHost = useRoomStore((state) => state.transferHost);
   const toggleReady = useRoomStore((state) => state.toggleReady);
   const updateSettings = useRoomStore((state) => state.updateSettings);
-  const sendChatMessage = useRoomStore((state) => state.sendChatMessage);
+  const transferHost = useRoomStore((state) => state.transferHost);
+  const kickPlayer = useRoomStore((state) => state.kickPlayer);
   const deleteRoom = useRoomStore((state) => state.deleteRoom);
+  const sendChatMessage = useRoomStore((state) => state.sendChatMessage);
   const startGame = useRoomStore((state) => state.startGame);
 
   const [message, setMessage] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
+
   const chatEndRef = useRef(null);
 
   // Redirect to Home if user setup is missing
@@ -43,7 +50,7 @@ const Lobby = () => {
   // If room is closed or player is kicked, the store's room becomes null. Redirect to home.
   useEffect(() => {
     // Wait for initial connection or reconnect attempts before navigating away
-    if (!room && name && !sessionStorage.getItem('mysterybox_active_room_code')) {
+    if (!room && name && !sessionStorage.getItem('blackout_active_room_code')) {
       navigate('/');
     }
   }, [room, navigate, name]);
@@ -53,15 +60,42 @@ const Lobby = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [room?.chat]);
 
-  if (!room) {
+  // Connect player if not already in the room state
+  useEffect(() => {
+    if (isConnected && name && !room && !loading && !error && !kicked) {
+      if (roomCode) {
+        joinRoom(roomCode.toUpperCase(), playerId, name, avatar);
+      }
+    }
+  }, [isConnected, name, room, roomCode, joinRoom, playerId, avatar, loading, error, kicked]);
+
+  if (loading && !room) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-white font-bold text-xl">
-        Connecting to room lobby...
+      <div className="flex min-h-screen items-center justify-center font-mono text-xs uppercase tracking-widest text-cyan-400">
+        <span className="animate-pulse">Accessing facility mainframe...</span>
       </div>
     );
   }
 
-  // Dynamically switch panels based on game states to prevent reloads
+  if (error && !room) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center font-mono">
+        <div className="text-3xl text-red-500">⚠️</div>
+        <h2 className="text-sm font-bold text-red-400 uppercase tracking-widest">ACCESS DENIED</h2>
+        <p className="text-xs text-slate-500 max-w-sm">{error}</p>
+        <button
+          onClick={() => navigate('/')}
+          className="mt-2 rounded-xl bg-white/5 border border-white/10 px-5 py-2 text-xs font-bold text-white hover:bg-white/10"
+        >
+          Return to Hub
+        </button>
+      </div>
+    );
+  }
+
+  if (!room) return null;
+
+  // Handle re-routing depending on gameState
   if (room.gameState !== 'waiting' && room.gameState !== 'game_over') {
     return <BlackoutGame />;
   }
@@ -71,13 +105,13 @@ const Lobby = () => {
   }
 
   const isHost = room.hostId === playerId;
-  const currentPlayer = room.players.find((p) => p.id === playerId);
-  const isReady = currentPlayer?.ready || false;
   const isSpectator = room.spectators.some((s) => s.id === playerId);
+  const myPlayer = room.players.find((p) => p.id === playerId);
+  const isReady = myPlayer?.ready === true;
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(room.roomCode);
-    toast.success('Room code copied to clipboard!');
+    toast.success('Access code copied to clipboard!', { icon: '📋' });
   };
 
   const handleLeave = () => {
@@ -91,9 +125,10 @@ const Lobby = () => {
 
   const handleSendChat = (e) => {
     e.preventDefault();
-    if (!message.trim()) return;
-    sendChatMessage(room.roomCode, playerId, message.trim());
-    setMessage('');
+    if (message.trim()) {
+      sendChatMessage(room.roomCode, playerId, message.trim());
+      setMessage('');
+    }
   };
 
   const handleSettingChange = (field, value) => {
@@ -110,46 +145,46 @@ const Lobby = () => {
     !isStarting;
 
   return (
-    <div className="flex min-h-screen flex-col items-center p-4 md:p-8">
+    <div className="flex min-h-screen flex-col items-center p-4 md:p-8 font-mono select-none text-xs">
       {/* Settings modal */}
       <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
 
       {/* Network Alert Banner */}
       {!isConnected && (
-        <div className="w-full max-w-6xl mb-4 bg-mystery-gold/20 border border-mystery-gold text-mystery-gold px-4 py-2.5 rounded-xl text-sm font-semibold text-center animate-pulse">
-          Connection lost. Reconnecting to server...
+        <div className="w-full max-w-6xl mb-4 bg-red-950/20 border border-red-500/30 text-red-400 px-4 py-2.5 rounded-xl text-xs font-black text-center animate-pulse uppercase tracking-wider">
+          ⚠️ Connection lost. Reconnecting to mainframe...
         </div>
       )}
 
       {/* Header Info */}
-      <div className="flex w-full max-w-6xl flex-col justify-between gap-4 border-b border-white/10 pb-4 md:flex-row md:items-center">
+      <div className="flex w-full max-w-6xl flex-col justify-between gap-4 border-b border-cyan-500/10 pb-4 md:flex-row md:items-center">
         <div className="text-left">
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-extrabold text-white">Lobby Waiting Room</h1>
-            <span className={`rounded-full px-3 py-1 text-xs font-bold text-mystery-bg ${room.settings.isPublic ? 'bg-mystery-teal' : 'bg-white/30'}`}>
-              {room.settings.isPublic ? 'Public' : 'Private'}
+            <h1 className="text-xl font-black text-white uppercase tracking-widest">FACILITY DEPLOYMENT LOBBY</h1>
+            <span className={`rounded-full px-3 py-0.5 text-[10px] font-bold text-slate-900 ${room.settings.isPublic ? 'bg-cyan-400' : 'bg-white/30'}`}>
+              {room.settings.isPublic ? 'PUBLIC' : 'PRIVATE'}
             </span>
             <button
               onClick={() => setShowSettings(true)}
-              className="rounded-xl bg-white/5 border border-white/10 p-2 text-lg hover:bg-white/10 active:scale-95 transition-all ml-2"
+              className="rounded-xl bg-white/5 border border-white/10 p-2 text-sm hover:bg-white/10 active:scale-95 transition-all ml-2"
               title="Open Settings"
               aria-label="Open Settings"
             >
               ⚙️
             </button>
           </div>
-          <p className="text-sm text-white/50 mt-1">Host ID: {room.hostId.substring(0, 8)}...</p>
+          <p className="text-[10px] text-slate-500 mt-1">Host ID: {room.hostId.substring(0, 12)}...</p>
         </div>
 
         {/* Room Code Display */}
         <div className="flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 p-2 md:self-end">
           <div className="px-3 text-left">
-            <div className="text-[10px] uppercase tracking-wider text-white/50">Room Code</div>
-            <div className="text-xl font-black tracking-widest text-mystery-gold">{room.roomCode}</div>
+            <div className="text-[9px] uppercase tracking-wider text-slate-500">Access Key</div>
+            <div className="text-base font-black tracking-widest text-amber-500">{room.roomCode}</div>
           </div>
           <button
             onClick={handleCopyCode}
-            className="rounded-lg bg-mystery-pink px-4 py-2 text-xs font-bold text-white hover:scale-105 active:scale-95 transition-all"
+            className="rounded-lg bg-cyan-600 hover:bg-cyan-700 px-4 py-2 text-xs font-bold text-white transition-all uppercase"
           >
             Copy Code
           </button>
@@ -159,10 +194,10 @@ const Lobby = () => {
       <div className="mt-6 flex w-full max-w-6xl flex-col gap-6 lg:flex-row">
         {/* Left Side: Players List */}
         <div className="flex-[2] flex flex-col gap-4">
-          <h2 className="text-xl font-bold text-white text-left flex justify-between items-center">
-            <span>Players ({room.players.length} / {room.settings.maxPlayers})</span>
+          <h2 className="text-sm font-bold text-slate-300 text-left flex justify-between items-center uppercase tracking-wider">
+            <span>Personnel ({room.players.length} / {room.settings.maxPlayers})</span>
             {room.spectators.length > 0 && (
-              <span className="text-xs font-normal text-white/55">Spectators: {room.spectators.length}</span>
+              <span className="text-xs font-normal text-slate-500">Spectators: {room.spectators.length}</span>
             )}
           </h2>
 
@@ -180,15 +215,15 @@ const Lobby = () => {
                     exit={{ opacity: 0, scale: 0.95 }}
                     className={`glass-card relative flex items-center gap-4 p-4 border transition-all ${
                       player.ready
-                        ? 'border-mystery-teal/40 shadow-[0_0_15px_rgba(45,212,191,0.15)] bg-mystery-teal/5'
+                        ? 'border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.1)] bg-cyan-950/5'
                         : 'border-white/5'
                     }`}
                   >
                     {/* Disconnect Overlay */}
                     {!player.connected && (
-                      <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/60 backdrop-blur-[2px] z-10">
-                        <div className="rounded-lg bg-mystery-gold/20 border border-mystery-gold px-3 py-1.5 text-xs font-bold text-mystery-gold animate-pulse">
-                          Disconnected (Grace Period)
+                      <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/75 backdrop-blur-[1px] z-10">
+                        <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 text-xs font-bold text-amber-500 animate-pulse">
+                          Disconnected (Re-link timer active)
                         </div>
                       </div>
                     )}
@@ -197,37 +232,37 @@ const Lobby = () => {
                     <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 text-3xl">
                       {player.avatar}
                       {/* Connection status indicator */}
-                      <span className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-mystery-bg ${player.connected ? 'bg-mystery-teal' : 'bg-mystery-gold animate-ping'}`} />
+                      <span className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-slate-950 ${player.connected ? 'bg-cyan-500' : 'bg-amber-500 animate-ping'}`} />
                     </div>
 
                     {/* Player Info */}
                     <div className="text-left flex-1 min-w-0 pr-4">
-                      <div className="flex items-center gap-1.5 font-bold text-white text-lg">
+                      <div className="flex items-center gap-1.5 font-bold text-white text-base">
                         <span className="truncate">{player.name}</span>
                         {isPlayerHost && <span title="Host">👑</span>}
-                        {isMe && <span className="rounded bg-white/20 px-1.5 py-0.5 text-[10px] font-medium text-white/70">You</span>}
+                        {isMe && <span className="rounded bg-white/10 px-1.5 py-0.5 text-[9px] font-medium text-slate-300">You</span>}
                       </div>
-                      <div className="text-xs text-white/50 mt-0.5 flex gap-2">
+                      <div className="text-[10px] text-slate-500 mt-0.5 flex gap-2">
                         <span>Score: {player.score}</span>
                         <span>•</span>
-                        <span className={player.ready ? 'text-mystery-teal font-medium' : 'text-white/40'}>
-                          {player.ready ? 'Ready' : 'Not Ready'}
+                        <span className={player.ready ? 'text-cyan-400 font-bold' : 'text-slate-500'}>
+                          {player.ready ? 'READY' : 'PREPARING'}
                         </span>
                       </div>
                     </div>
 
                     {/* Host Controls for other players */}
                     {isHost && !isMe && player.connected && (
-                      <div className="flex flex-col gap-1.5 ml-auto">
+                      <div className="flex flex-col gap-1.5 ml-auto text-[9px]">
                         <button
                           onClick={() => transferHost(room.roomCode, playerId, player.id)}
-                          className="rounded bg-white/5 px-2.5 py-1 text-[10px] font-semibold text-white/80 hover:bg-white/10 transition-all"
+                          className="rounded bg-white/5 px-2.5 py-1 font-bold text-slate-300 hover:bg-white/10 transition-all uppercase"
                         >
-                          Make Host
+                          Host
                         </button>
                         <button
                           onClick={() => kickPlayer(room.roomCode, playerId, player.id)}
-                          className="rounded bg-mystery-pink/15 px-2.5 py-1 text-[10px] font-semibold text-mystery-pink hover:bg-mystery-pink/25 transition-all"
+                          className="rounded bg-red-950/20 border border-red-500/20 px-2.5 py-1 font-bold text-red-400 hover:bg-red-950/40 transition-all uppercase"
                         >
                           Kick
                         </button>
@@ -242,7 +277,7 @@ const Lobby = () => {
           {/* Spectator Display */}
           {room.spectators.length > 0 && (
             <div className="glass-card p-4 text-left border border-white/5">
-              <h3 className="text-sm font-bold text-white/70 mb-2">Spectating:</h3>
+              <h3 className="text-xs font-bold text-slate-400 mb-2 uppercase">Spectating Mainframe:</h3>
               <div className="flex flex-wrap gap-2">
                 {room.spectators.map((spec) => (
                   <span
@@ -251,7 +286,7 @@ const Lobby = () => {
                   >
                     <span>{spec.avatar}</span>
                     <span className="font-semibold">{spec.name}</span>
-                    <span className={`h-1.5 w-1.5 rounded-full ${spec.connected ? 'bg-mystery-teal' : 'bg-mystery-gold animate-pulse'}`} />
+                    <span className={`h-1.5 w-1.5 rounded-full ${spec.connected ? 'bg-cyan-500' : 'bg-amber-500 animate-pulse'}`} />
                   </span>
                 ))}
               </div>
@@ -262,15 +297,15 @@ const Lobby = () => {
         {/* Right Side: Chat, Settings and Actions */}
         <div className="flex-1 flex flex-col gap-6">
           {/* Room Settings Panel */}
-          <div className="glass-card p-5 text-left flex flex-col gap-4 border border-white/5">
-            <h3 className="text-lg font-bold text-white">Room Settings</h3>
+          <div className="glass-card p-5 text-left flex flex-col gap-4 border border-white/5 text-xs">
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider">Facility Settings</h3>
 
             <div className="flex flex-col gap-3.5">
               <div className="flex justify-between items-center">
                 {isHost ? (
-                  <label htmlFor="lobby-max-players" className="text-sm text-white/70">Max Players</label>
+                  <label htmlFor="lobby-max-players" className="text-slate-400 uppercase font-bold">Max Roster</label>
                 ) : (
-                  <span className="text-sm text-white/70">Max Players</span>
+                  <span className="text-slate-400 uppercase font-bold">Max Roster</span>
                 )}
                 {isHost ? (
                   <select
@@ -278,24 +313,24 @@ const Lobby = () => {
                     name="lobby-max-players"
                     value={room.settings.maxPlayers}
                     onChange={(e) => handleSettingChange('maxPlayers', Number(e.target.value))}
-                    className="rounded-lg border border-white/20 bg-black/40 px-2.5 py-1 text-sm text-white focus:outline-none focus:border-mystery-pink"
+                    className="rounded-lg border border-white/10 bg-black/40 px-2.5 py-1 text-xs text-white focus:outline-none focus:border-cyan-500"
                   >
-                    {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => (
-                      <option key={n} value={n} className="bg-mystery-bg">
+                    {[4, 5, 6, 7, 8, 9, 10].map((n) => (
+                      <option key={n} value={n} className="bg-slate-900">
                         {n} Players
                       </option>
                     ))}
                   </select>
                 ) : (
-                  <span className="text-sm text-white font-bold">{room.settings.maxPlayers} Players</span>
+                  <span className="text-white font-bold">{room.settings.maxPlayers} Players</span>
                 )}
               </div>
 
               <div className="flex justify-between items-center">
                 {isHost ? (
-                  <label htmlFor="lobby-total-rounds" className="text-sm text-white/70">Total Rounds</label>
+                  <label htmlFor="lobby-total-rounds" className="text-slate-400 uppercase font-bold">Match Rounds</label>
                 ) : (
-                  <span className="text-sm text-white/70">Total Rounds</span>
+                  <span className="text-slate-400 uppercase font-bold">Match Rounds</span>
                 )}
                 {isHost ? (
                   <select
@@ -303,30 +338,30 @@ const Lobby = () => {
                     name="lobby-total-rounds"
                     value={room.settings.totalRounds}
                     onChange={(e) => handleSettingChange('totalRounds', Number(e.target.value))}
-                    className="rounded-lg border border-white/20 bg-black/40 px-2.5 py-1 text-sm text-white focus:outline-none focus:border-mystery-pink"
+                    className="rounded-lg border border-white/10 bg-black/40 px-2.5 py-1 text-xs text-white focus:outline-none focus:border-cyan-500"
                   >
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20].map((n) => (
-                      <option key={n} value={n} className="bg-mystery-bg">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                      <option key={n} value={n} className="bg-slate-900">
                         {n} Rounds
                       </option>
                     ))}
                   </select>
                 ) : (
-                  <span className="text-sm text-white font-bold">{room.settings.totalRounds} Rounds</span>
+                  <span className="text-white font-bold">{room.settings.totalRounds} Rounds</span>
                 )}
               </div>
 
               <div className="flex justify-between items-center">
-                <span className="text-sm text-white/70">Room Visibility</span>
+                <span className="text-slate-400 uppercase font-bold">Visibility</span>
                 {isHost ? (
                   <button
                     onClick={() => handleSettingChange('isPublic', !room.settings.isPublic)}
-                    className="rounded-lg bg-white/5 border border-white/10 px-3 py-1 text-xs font-bold text-white hover:bg-white/10 transition-all"
+                    className="rounded-lg bg-white/5 border border-white/10 px-3 py-1 font-bold text-white hover:bg-white/10 transition-all uppercase"
                   >
                     Set {room.settings.isPublic ? 'Private' : 'Public'}
                   </button>
                 ) : (
-                  <span className="text-sm text-white font-bold">{room.settings.isPublic ? 'Public' : 'Private'}</span>
+                  <span className="text-white font-bold">{room.settings.isPublic ? 'Public' : 'Private'}</span>
                 )}
               </div>
             </div>
@@ -334,14 +369,14 @@ const Lobby = () => {
 
           {/* Lobby Chat Box */}
           <div className="glass-card flex flex-col h-72 border border-white/5 overflow-hidden">
-            <div className="border-b border-white/10 px-4 py-2.5 text-left text-xs font-bold text-white/60 uppercase tracking-wider">
-              Lobby Chat
+            <div className="border-b border-white/10 px-4 py-2.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
+              Lobby Comms
             </div>
 
             {/* Chat Messages Log */}
             <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
               {room.chat.length === 0 ? (
-                <div className="text-center text-white/30 text-xs py-10">Lobby chat is quiet. Say hello!</div>
+                <div className="text-center text-slate-600 text-xs py-10">Lobby comms silent. Broadcast transmission?</div>
               ) : (
                 room.chat.map((msg, i) => {
                   const isSystem = msg.senderId === 'system';
@@ -349,18 +384,18 @@ const Lobby = () => {
                   return (
                     <div
                       key={i}
-                      className={`text-left text-sm ${
+                      className={`text-left text-[11px] leading-relaxed ${
                         isSystem
-                          ? 'text-mystery-gold font-medium italic text-center text-xs my-1'
+                          ? 'text-amber-500 font-medium italic text-center text-[10px] my-1'
                           : ''
                       }`}
                     >
                       {!isSystem && (
-                        <span className={`font-bold mr-1.5 ${isMe ? 'text-mystery-pink' : 'text-mystery-teal'}`}>
+                        <span className={`font-bold mr-1.5 ${isMe ? 'text-cyan-400' : 'text-slate-400'}`}>
                           {msg.senderName}:
                         </span>
                       )}
-                      <span className={isSystem ? 'text-mystery-gold' : 'text-white/90'}>{msg.text}</span>
+                      <span className={isSystem ? 'text-amber-500' : 'text-slate-200'}>{msg.text}</span>
                     </div>
                   );
                 })
@@ -376,14 +411,14 @@ const Lobby = () => {
                 name="lobby-chat-input"
                 type="text"
                 maxLength={80}
-                placeholder="Type a message..."
+                placeholder="Transmit message..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className="flex-1 rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-mystery-pink"
+                className="flex-1 rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500"
               />
               <button
                 type="submit"
-                className="rounded-lg bg-mystery-pink px-4 py-1.5 text-xs font-bold text-white hover:scale-105 active:scale-95 transition-all"
+                className="rounded-lg bg-cyan-600 hover:bg-cyan-700 px-4 py-1.5 font-bold text-white hover:scale-105 active:scale-95 transition-all uppercase"
                 disabled={!message.trim()}
               >
                 Send
@@ -396,21 +431,21 @@ const Lobby = () => {
             {!isSpectator && !isHost && (
               <button
                 onClick={handleToggleReady}
-                className={`w-full py-3.5 rounded-xl font-bold transition-all text-white shadow-lg ${
+                className={`w-full py-3 rounded-xl font-bold transition-all text-white shadow-lg uppercase tracking-wider border ${
                   isReady
-                    ? 'bg-gradient-to-r from-mystery-teal to-emerald-500 hover:scale-105 active:scale-95'
-                    : 'bg-gradient-to-r from-mystery-pink to-mystery-purple hover:scale-105 active:scale-95'
+                    ? 'bg-gradient-to-r from-red-600 to-amber-700 border-red-500/20 hover:scale-[1.01] active:scale-95'
+                    : 'bg-gradient-to-r from-cyan-600 to-blue-700 border-cyan-500/20 hover:scale-[1.01] active:scale-95 shadow-[0_0_15px_rgba(6,182,212,0.25)]'
                 }`}
               >
-                {isReady ? 'Set Unready' : 'Set Ready'}
+                {isReady ? 'Set Preparing' : 'Ready Up'}
               </button>
             )}
 
             {isHost && (
               <button
-                className={`w-full py-3.5 rounded-xl font-bold transition-all text-white shadow-lg ${
+                className={`w-full py-3 rounded-xl font-bold transition-all text-white shadow-lg uppercase tracking-wider border ${
                   canStartGame
-                    ? 'bg-gradient-to-r from-mystery-teal to-emerald-500 hover:scale-105 active:scale-95 cursor-pointer'
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-700 border-emerald-500/20 hover:scale-[1.01] active:scale-95 cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.25)]'
                     : 'bg-white/10 text-white/30 border border-white/10 cursor-not-allowed'
                 }`}
                 disabled={!canStartGame}
@@ -422,7 +457,7 @@ const Lobby = () => {
                   }
                 }}
               >
-                {isStarting ? 'STARTING...' : 'Start Game (Needs 4+ players & all ready)'}
+                {isStarting ? 'STARTING...' : 'Start Game (Needs 4+ Players & Ready)'}
               </button>
             )}
 
@@ -430,14 +465,14 @@ const Lobby = () => {
               {isHost && (
                 <button
                   onClick={() => deleteRoom(room.roomCode, playerId)}
-                  className="flex-1 rounded-xl border border-mystery-pink/30 bg-mystery-pink/10 py-3 text-sm font-semibold text-mystery-pink transition-all hover:bg-mystery-pink/20"
+                  className="flex-1 rounded-xl border border-red-500/20 bg-red-950/15 py-3 font-semibold text-red-400 transition-all hover:bg-red-950/30 uppercase tracking-wide"
                 >
                   Delete Room
                 </button>
               )}
               <button
                 onClick={handleLeave}
-                className="flex-1 rounded-xl border border-white/20 bg-white/5 py-3 text-sm font-semibold text-white transition-all hover:bg-white/10"
+                className="flex-1 rounded-xl border border-white/10 bg-white/5 py-3 font-semibold text-slate-300 transition-all hover:bg-white/10 uppercase tracking-wide"
               >
                 Leave Room
               </button>

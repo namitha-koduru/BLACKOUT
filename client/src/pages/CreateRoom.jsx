@@ -1,5 +1,5 @@
 // pages/CreateRoom.jsx
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useUserStore } from '../store/userStore.js';
@@ -15,7 +15,7 @@ const CreateRoom = () => {
   const createRoom = useRoomStore((state) => state.createRoom);
   const loading = useRoomStore((state) => state.loading);
 
-  const [maxPlayers, setMaxPlayers] = useState(12);
+  const [maxPlayers, setMaxPlayers] = useState(10);
   const [totalRounds, setTotalRounds] = useState(5);
   const [isPublic, setIsPublic] = useState(true);
 
@@ -43,13 +43,13 @@ const CreateRoom = () => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-6 text-center">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-6 text-center select-none font-mono">
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-r from-mystery-gold via-mystery-pink to-mystery-purple bg-clip-text text-4xl font-extrabold text-transparent sm:text-5xl"
+        className="bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500 bg-clip-text text-3xl font-black uppercase tracking-widest text-transparent sm:text-4xl"
       >
-        Lobby Settings
+        LOBBY CREATION
       </motion.h1>
 
       <motion.form
@@ -59,16 +59,16 @@ const CreateRoom = () => {
         onSubmit={handleSubmit}
       >
         <div>
-          <label htmlFor="create-max-players" className="mb-2 block text-sm font-semibold text-white/90">Max Players (2 - 12)</label>
+          <label htmlFor="create-max-players" className="mb-2 block text-xs font-bold text-slate-300 uppercase tracking-wider">Max Players (4 - 10)</label>
           <select
             id="create-max-players"
             name="create-max-players"
             value={maxPlayers}
             onChange={(e) => setMaxPlayers(Number(e.target.value))}
-            className="w-full rounded-xl border border-white/20 bg-black/30 px-4 py-3 text-white focus:border-mystery-pink focus:outline-none"
+            className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-xs text-white focus:border-cyan-500 focus:outline-none"
           >
-            {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => (
-              <option key={num} value={num} className="bg-mystery-bg">
+            {[4, 5, 6, 7, 8, 9, 10].map((num) => (
+              <option key={num} value={num} className="bg-slate-900">
                 {num} Players
               </option>
             ))}
@@ -76,32 +76,32 @@ const CreateRoom = () => {
         </div>
 
         <div>
-          <label htmlFor="create-total-rounds" className="mb-2 block text-sm font-semibold text-white/90">Total Rounds (1 - 20)</label>
+          <label htmlFor="create-total-rounds" className="mb-2 block text-xs font-bold text-slate-300 uppercase tracking-wider">Total Rounds (1 - 10)</label>
           <select
             id="create-total-rounds"
             name="create-total-rounds"
             value={totalRounds}
             onChange={(e) => setTotalRounds(Number(e.target.value))}
-            className="w-full rounded-xl border border-white/20 bg-black/30 px-4 py-3 text-white focus:border-mystery-pink focus:outline-none"
+            className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-xs text-white focus:border-cyan-500 focus:outline-none"
           >
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20].map((num) => (
-              <option key={num} value={num} className="bg-mystery-bg">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+              <option key={num} value={num} className="bg-slate-900">
                 {num} Rounds
               </option>
             ))}
           </select>
         </div>
 
-        <div className="flex items-center justify-between py-2 border-t border-b border-white/10 my-1">
+        <div className="flex items-center justify-between py-2 border-t border-b border-white/10 my-1 text-xs">
           <div>
-            <div className="font-semibold text-white">Public Lobby</div>
-            <div className="text-xs text-white/50">Allow other players to discover and join this room</div>
+            <div className="font-bold text-slate-200">Public Lobby</div>
+            <div className="text-[10px] text-slate-500">Allow other players to discover and join this room</div>
           </div>
           <button
             type="button"
             onClick={() => setIsPublic(!isPublic)}
             className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-              isPublic ? 'bg-mystery-teal' : 'bg-white/10'
+              isPublic ? 'bg-cyan-500' : 'bg-white/10'
             }`}
           >
             <span
@@ -112,11 +112,11 @@ const CreateRoom = () => {
           </button>
         </div>
 
-        <div className="flex gap-3 mt-2">
+        <div className="flex gap-3 mt-2 text-xs">
           <button
             type="button"
             onClick={() => navigate('/')}
-            className="flex-1 rounded-xl border border-white/20 bg-white/5 py-3 font-semibold text-white transition-all hover:bg-white/10"
+            className="flex-1 rounded-xl border border-white/10 bg-white/5 py-3 font-bold text-slate-300 transition-all hover:bg-white/10 uppercase"
           >
             Cancel
           </button>

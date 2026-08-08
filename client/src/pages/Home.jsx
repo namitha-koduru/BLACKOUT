@@ -55,13 +55,13 @@ const Home = () => {
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, delay: 0.2 }}
-        className="bg-gradient-to-r from-mystery-gold via-mystery-pink to-mystery-purple bg-clip-text text-5xl font-extrabold text-transparent sm:text-6xl"
+        className="bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500 bg-clip-text text-5xl font-black uppercase tracking-widest text-transparent sm:text-6xl font-mono"
       >
-        Mystery Box
+        BLACKOUT
       </motion.h1>
 
-      <p className="max-w-md text-white/70">
-        Enter your party nickname and select an avatar to enter the multiplayer lobby.
+      <p className="max-w-md text-slate-400 text-xs font-mono uppercase tracking-wide leading-relaxed">
+        Repipe facility generators, query terminal evidence databases, and expose hidden saboteurs in a real-time multiplayer arena.
       </p>
 
       {!isSaved ? (

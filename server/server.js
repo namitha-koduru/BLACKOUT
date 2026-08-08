@@ -18,7 +18,7 @@ app.set('io', io);
 const start = async () => {
   httpServer.listen(env.port, () => {
     // eslint-disable-next-line no-console
-    console.log(`[server] Mystery Box API listening on port ${env.port} (${env.nodeEnv})`);
+    console.log(`[server] BLACKOUT API listening on port ${env.port} (${env.nodeEnv})`);
     // eslint-disable-next-line no-console
     console.log(`[server] Health check: http://localhost:${env.port}/api/health`);
   });

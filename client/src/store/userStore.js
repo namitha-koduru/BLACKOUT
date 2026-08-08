@@ -7,22 +7,22 @@ const generatePlayerId = () => {
 };
 
 const getStoredPlayerId = () => {
-  let id = sessionStorage.getItem('mysterybox_player_id');
+  let id = sessionStorage.getItem('blackout_player_id');
   if (!id) {
     id = generatePlayerId();
-    sessionStorage.setItem('mysterybox_player_id', id);
+    sessionStorage.setItem('blackout_player_id', id);
   }
   return id;
 };
 
 export const useUserStore = create((set) => ({
   playerId: getStoredPlayerId(),
-  name: localStorage.getItem('mysterybox_player_name') || '',
-  avatar: localStorage.getItem('mysterybox_player_avatar') || '🎁',
+  name: localStorage.getItem('blackout_player_name') || '',
+  avatar: localStorage.getItem('blackout_player_avatar') || '👤',
 
   setProfile: (name, avatar) => {
-    localStorage.setItem('mysterybox_player_name', name);
-    localStorage.setItem('mysterybox_player_avatar', avatar);
+    localStorage.setItem('blackout_player_name', name);
+    localStorage.setItem('blackout_player_avatar', avatar);
     set({ name, avatar });
   },
 }));

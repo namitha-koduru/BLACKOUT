@@ -35,6 +35,13 @@ export const useRoomStore = create((set, get) => ({
     socket.off('timerUpdated');
     socket.off('gameFinished');
     socket.off('roleAssigned');
+    socket.off('meetingStarted');
+    socket.off('meetingTimer');
+    socket.off('meetingChatMessageReceived');
+    socket.off('meetingEnded');
+    socket.off('gameOver');
+    socket.off('finalResults');
+    socket.off('gameReset');
 
     // Movement socket events
     socket.off('playerPositions');
@@ -71,14 +78,14 @@ export const useRoomStore = create((set, get) => ({
     socket.on('kicked', ({ message }) => {
       toast.error(message || 'You have been kicked from the lobby.');
       set({ room: null, kicked: true, myRoleInfo: null, playerPositions: {} });
-      sessionStorage.removeItem('mysterybox_active_room_code');
+      sessionStorage.removeItem('blackout_active_room_code');
       stopBackgroundMusic();
     });
 
     socket.on('lobbyClosed', ({ message }) => {
       toast.error(message || 'The lobby was closed by the host.');
       set({ room: null, myRoleInfo: null, playerPositions: {} });
-      sessionStorage.removeItem('mysterybox_active_room_code');
+      sessionStorage.removeItem('blackout_active_room_code');
       stopBackgroundMusic();
     });
 
@@ -270,7 +277,7 @@ export const useRoomStore = create((set, get) => ({
       set({ loading: false });
       if (res.success) {
         set({ room: res.room, kicked: false, myRoleInfo: null, playerPositions: {} });
-        sessionStorage.setItem('mysterybox_active_room_code', res.room.roomCode);
+        sessionStorage.setItem('blackout_active_room_code', res.room.roomCode);
       } else {
         set({ error: res.message });
         toast.error(res.message);
@@ -287,7 +294,7 @@ export const useRoomStore = create((set, get) => ({
       set({ loading: false });
       if (res.success) {
         set({ room: res.room, kicked: false, myRoleInfo: null, playerPositions: {} });
-        sessionStorage.setItem('mysterybox_active_room_code', res.room.roomCode);
+        sessionStorage.setItem('blackout_active_room_code', res.room.roomCode);
       } else {
         set({ error: res.message });
         toast.error(res.message);
@@ -304,11 +311,11 @@ export const useRoomStore = create((set, get) => ({
       set({ loading: false });
       if (res.success) {
         set({ room: res.room, kicked: false });
-        sessionStorage.setItem('mysterybox_active_room_code', res.room.roomCode);
+        sessionStorage.setItem('blackout_active_room_code', res.room.roomCode);
         toast.success('Reconnected to lobby!');
       } else {
         set({ room: null, error: res.message, myRoleInfo: null, playerPositions: {} });
-        sessionStorage.removeItem('mysterybox_active_room_code');
+        sessionStorage.removeItem('blackout_active_room_code');
       }
     });
   },
@@ -320,7 +327,7 @@ export const useRoomStore = create((set, get) => ({
     socket.emit('leaveRoom', { roomCode, playerId }, (res) => {
       if (res.success) {
         set({ room: null, myRoleInfo: null, playerPositions: {} });
-        sessionStorage.removeItem('mysterybox_active_room_code');
+        sessionStorage.removeItem('blackout_active_room_code');
       }
     });
   },
@@ -392,7 +399,7 @@ export const useRoomStore = create((set, get) => ({
     socket.emit('deleteRoom', { roomCode, hostId }, (res) => {
       if (res.success) {
         set({ room: null, myRoleInfo: null, playerPositions: {} });
-        sessionStorage.removeItem('mysterybox_active_room_code');
+        sessionStorage.removeItem('blackout_active_room_code');
         toast.success('Room closed.');
       } else {
         toast.error(res.message);

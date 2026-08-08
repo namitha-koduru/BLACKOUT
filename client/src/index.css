@@ -9,32 +9,33 @@
     height: 100%;
   }
   body {
-    @apply bg-party-gradient bg-fixed transition-all duration-300;
+    background-color: #030407 !important;
+    @apply text-white transition-all duration-300;
   }
   
   /* Themes mapping */
   body.theme-party {
-    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%) !important;
+    background: linear-gradient(135deg, #030407 0%, #06070d 100%) !important;
   }
   
   body.theme-neon {
-    background: linear-gradient(135deg, #000000 0%, #0b1528 50%, #020c1b 100%) !important;
+    background: linear-gradient(135deg, #020617 0%, #090d1f 100%) !important;
   }
   
   body.theme-classic {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+    background: linear-gradient(135deg, #030407 0%, #06070d 100%) !important;
   }
 }
 
 @layer components {
-  /* Glassmorphism card used throughout Lobby/Room/Game screens (Phases 3-6) */
+  /* Glassmorphism card used throughout Lobby/Room/Game screens */
   .glass-card {
-    @apply rounded-2xl border border-white/10 bg-white/10 shadow-glass backdrop-blur-glass;
+    @apply rounded-2xl border border-white/5 bg-[#0a0b12]/70 shadow-lg backdrop-blur-md;
   }
 
   .btn-primary {
-    @apply rounded-xl bg-gradient-to-r from-mystery-pink to-mystery-purple px-5 py-2.5
-      font-semibold text-white shadow-lg transition-all duration-150
-      hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply rounded-xl bg-gradient-to-r from-cyan-600 to-blue-700 px-5 py-2.5
+      font-bold text-white shadow-lg transition-all duration-150 font-mono uppercase tracking-wider
+      hover:scale-[1.01] hover:shadow-cyan-500/10 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50;
   }
 }

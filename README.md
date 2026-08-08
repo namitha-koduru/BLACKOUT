@@ -120,3 +120,49 @@ blackout/
 * **`finalResults`** *(Server -> Client)*: Transmits compiled match scores, timelines, Hacker manipulation details, and voting rounds lists.
 * **`playAgain`** *(Client -> Server)*: Host request to reset game states back to waiting room and ready up for a new match.
 * **`returnToLobby`** *(Client -> Server)*: Host request to clear statistics and return all clients to the lobby.
+
+---
+
+## 🛠️ Local Installation & Development
+
+### 1. Prerequisites
+* **Node.js**: v18 or later
+* **npm**: v9 or later
+
+### 2. Environment Variables
+Configure local variables to wire client/server hooks:
+
+**Client (`client/.env`)**:
+```env
+VITE_SOCKET_URL=http://localhost:5000
+```
+
+**Server (`server/.env`)**:
+```env
+PORT=5000
+NODE_ENV=development
+CLIENT_URL=http://localhost:5173
+```
+
+### 3. Setup Commands
+Run client and server concurrently:
+
+**Run Backend Server**:
+```bash
+cd server
+npm install
+npm run dev
+```
+
+**Run Frontend Client**:
+```bash
+cd client
+npm install
+npm run dev
+```
+
+---
+
+## 🏆 Production Deployment
+* **Frontend**: Can be built for static hosting (e.g., Vercel, Netlify) using `npm run build` in the `client/` folder.
+* **Backend**: Can be deployed to hosting providers supporting persistent WebSockets (e.g., Render, Railway) via `npm start` in the `server/` folder. Ensure CORS `CLIENT_URL` points to the deployed client.

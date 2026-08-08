@@ -40,7 +40,7 @@ export const SocketProvider = ({ children }) => {
       setIsConnected(true);
 
       // Support automatic reconnection on page refresh
-      const roomCode = sessionStorage.getItem('mysterybox_active_room_code');
+      const roomCode = sessionStorage.getItem('blackout_active_room_code');
       const playerId = useUserStore.getState().playerId;
       if (roomCode && playerId) {
         if (import.meta.env.DEV) {

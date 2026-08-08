@@ -6,7 +6,7 @@ const router = Router();
 router.get('/', (req, res) => {
   res.json({
     success: true,
-    message: 'Mystery Box API is running',
+    message: 'BLACKOUT API is running',
     phase: 'Phase 5 — Production Ready',
     timestamp: new Date().toISOString(),
   });

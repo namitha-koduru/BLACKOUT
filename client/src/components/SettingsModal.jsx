@@ -1,4 +1,5 @@
 // components/SettingsModal.jsx
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettingsStore } from '../store/settingsStore.js';
 import { playSound } from '../utils/sound.js';
@@ -10,13 +11,11 @@ const SettingsModal = ({ isOpen, onClose }) => {
     animationSpeed,
     theme,
     showTimer,
-    showTradeHistory,
     setSoundVolume,
     setMusicOn,
     setAnimationSpeed,
     setTheme,
     setShowTimer,
-    setShowTradeHistory,
   } = useSettingsStore();
 
   if (!isOpen) return null;
@@ -43,7 +42,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          className="absolute inset-0 bg-black/75 backdrop-blur-sm"
         />
 
         {/* Modal content */}
@@ -51,11 +50,11 @@ const SettingsModal = ({ isOpen, onClose }) => {
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
-          className="glass-card z-10 w-full max-w-md border border-white/20 p-6 flex flex-col gap-5 text-white"
+          className="bg-slate-900 border border-cyan-500/20 shadow-2xl shadow-cyan-500/5 rounded-2xl z-10 w-full max-w-md p-6 flex flex-col gap-5 text-white"
         >
-          <div className="flex items-center justify-between border-b border-white/10 pb-3">
-            <h2 className="text-xl font-black flex items-center gap-2">
-              <span>⚙️</span> Game Settings
+          <div className="flex items-center justify-between border-b border-cyan-500/10 pb-3">
+            <h2 className="text-base font-black flex items-center gap-2 font-mono uppercase tracking-widest text-cyan-400">
+              <span>⚙️</span> System Settings
             </h2>
             <button
               onClick={onClose}
@@ -66,12 +65,12 @@ const SettingsModal = ({ isOpen, onClose }) => {
             </button>
           </div>
 
-          <div className="flex flex-col gap-4 text-sm max-h-[350px] overflow-y-auto pr-1">
+          <div className="flex flex-col gap-4 text-xs font-mono max-h-[350px] overflow-y-auto pr-1">
             {/* Volume control */}
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <label htmlFor="settings-volume" className="font-semibold text-white/90">Sound Volume</label>
-                <span className="text-xs font-bold text-mystery-gold">
+                <label htmlFor="settings-volume" className="font-semibold text-slate-300">Auditory Volume</label>
+                <span className="text-xs font-black text-cyan-400">
                   {Math.round(soundVolume * 100)}%
                 </span>
               </div>
@@ -86,12 +85,12 @@ const SettingsModal = ({ isOpen, onClose }) => {
                   step="0.05"
                   value={soundVolume}
                   onChange={handleVolumeChange}
-                  className="flex-1 accent-mystery-pink cursor-pointer h-1.5 rounded-lg bg-white/10 appearance-none"
+                  className="flex-1 accent-cyan-500 cursor-pointer h-1.5 rounded-lg bg-white/10 appearance-none"
                 />
                 <button
                   type="button"
                   onClick={handleTestSound}
-                  className="rounded bg-white/10 px-2.5 py-1 text-xs font-bold hover:bg-white/20"
+                  className="rounded bg-white/10 px-2.5 py-1 text-[10px] font-bold hover:bg-white/20 uppercase"
                 >
                   Test
                 </button>
@@ -101,14 +100,14 @@ const SettingsModal = ({ isOpen, onClose }) => {
             {/* Music Toggle */}
             <div className="flex items-center justify-between py-1.5 border-b border-white/5">
               <div>
-                <span className="font-semibold text-white/90">Background Music</span>
-                <div className="text-[10px] text-white/50">Procedural ambient synth track</div>
+                <span className="font-semibold text-slate-300">Ambient Hum</span>
+                <div className="text-[9px] text-slate-500">Facility background soundscape</div>
               </div>
               <button
                 type="button"
                 onClick={handleMusicToggle}
                 className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                  musicOn ? 'bg-mystery-teal' : 'bg-white/10'
+                  musicOn ? 'bg-cyan-500' : 'bg-white/10'
                 }`}
               >
                 <span
@@ -121,44 +120,43 @@ const SettingsModal = ({ isOpen, onClose }) => {
 
             {/* Animation Speed Selector */}
             <div className="flex items-center justify-between py-1.5 border-b border-white/5">
-              <label htmlFor="settings-animation-speed" className="font-semibold text-white/90">Animation Speed</label>
+              <label htmlFor="settings-animation-speed" className="font-semibold text-slate-300">Animation Speed</label>
               <select
                 id="settings-animation-speed"
                 name="settings-animation-speed"
                 value={animationSpeed}
                 onChange={(e) => setAnimationSpeed(e.target.value)}
-                className="rounded bg-black/40 border border-white/20 px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-mystery-pink"
+                className="rounded bg-black/40 border border-white/10 px-2 py-1 text-xs text-white focus:outline-none focus:border-cyan-500"
               >
-                <option value="slow" className="bg-mystery-bg">Slow (Reduced Motion)</option>
-                <option value="normal" className="bg-mystery-bg">Normal</option>
-                <option value="fast" className="bg-mystery-bg">Fast (No Delay)</option>
+                <option value="slow" className="bg-slate-900">Slow (Reduced Motion)</option>
+                <option value="normal" className="bg-slate-900">Normal</option>
+                <option value="fast" className="bg-slate-900">Fast (Instant)</option>
               </select>
             </div>
 
             {/* Theme Selector */}
             <div className="flex items-center justify-between py-1.5 border-b border-white/5">
-              <label htmlFor="settings-theme" className="font-semibold text-white/90">Color Theme</label>
+              <label htmlFor="settings-theme" className="font-semibold text-slate-300">Diagnostics Theme</label>
               <select
                 id="settings-theme"
                 name="settings-theme"
                 value={theme}
                 onChange={(e) => setTheme(e.target.value)}
-                className="rounded bg-black/40 border border-white/20 px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-mystery-pink"
+                className="rounded bg-black/40 border border-white/10 px-2 py-1 text-xs text-white focus:outline-none focus:border-cyan-500"
               >
-                <option value="party" className="bg-mystery-bg">Party Mode (Dark Violet)</option>
-                <option value="neon" className="bg-mystery-bg">Neon Vibe (Cyan & Pink)</option>
-                <option value="classic" className="bg-mystery-bg">Classic (Plain Slate)</option>
+                <option value="classic" className="bg-slate-900">Facility Charcoal (Classic)</option>
+                <option value="neon" className="bg-slate-900">Emergency Cyan (Neon)</option>
               </select>
             </div>
 
             {/* Visibility Settings */}
             <div className="flex items-center justify-between py-1.5 border-b border-white/5">
-              <span className="font-semibold text-white/90">Display Round Timer</span>
+              <span className="font-semibold text-slate-300">Display Diagnostics Clocks</span>
               <button
                 type="button"
                 onClick={() => setShowTimer(!showTimer)}
                 className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                  showTimer ? 'bg-mystery-teal' : 'bg-white/10'
+                  showTimer ? 'bg-cyan-500' : 'bg-white/10'
                 }`}
               >
                 <span
@@ -168,31 +166,14 @@ const SettingsModal = ({ isOpen, onClose }) => {
                 />
               </button>
             </div>
-
-            <div className="flex items-center justify-between py-1.5">
-              <span className="font-semibold text-white/90">Display Trade History Log</span>
-              <button
-                type="button"
-                onClick={() => setShowTradeHistory(!showTradeHistory)}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                  showTradeHistory ? 'bg-mystery-teal' : 'bg-white/10'
-                }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                    showTradeHistory ? 'translate-x-5' : 'translate-x-0'
-                  }`}
-                />
-              </button>
-            </div>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="btn-primary py-2.5 mt-2 font-bold"
+            className="w-full bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg py-2 text-xs font-mono font-black uppercase tracking-wider transition-colors mt-2"
           >
-            Save & Apply
+            Apply Changes
           </button>
         </motion.div>
       </div>
