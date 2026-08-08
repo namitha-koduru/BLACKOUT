@@ -72,8 +72,10 @@ const Home = () => {
           onSubmit={handleSaveProfile}
         >
           <div>
-            <label className="mb-2 block text-sm font-semibold text-white/90">Display Nickname</label>
+            <label htmlFor="display-nickname" className="mb-2 block text-sm font-semibold text-white/90">Display Nickname</label>
             <input
+              id="display-nickname"
+              name="display-nickname"
               type="text"
               maxLength={15}
               placeholder="e.g. BoxMaster99"

@@ -59,8 +59,10 @@ const CreateRoom = () => {
         onSubmit={handleSubmit}
       >
         <div>
-          <label className="mb-2 block text-sm font-semibold text-white/90">Max Players (2 - 12)</label>
+          <label htmlFor="create-max-players" className="mb-2 block text-sm font-semibold text-white/90">Max Players (2 - 12)</label>
           <select
+            id="create-max-players"
+            name="create-max-players"
             value={maxPlayers}
             onChange={(e) => setMaxPlayers(Number(e.target.value))}
             className="w-full rounded-xl border border-white/20 bg-black/30 px-4 py-3 text-white focus:border-mystery-pink focus:outline-none"
@@ -74,8 +76,10 @@ const CreateRoom = () => {
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-semibold text-white/90">Total Rounds (1 - 20)</label>
+          <label htmlFor="create-total-rounds" className="mb-2 block text-sm font-semibold text-white/90">Total Rounds (1 - 20)</label>
           <select
+            id="create-total-rounds"
+            name="create-total-rounds"
             value={totalRounds}
             onChange={(e) => setTotalRounds(Number(e.target.value))}
             className="w-full rounded-xl border border-white/20 bg-black/30 px-4 py-3 text-white focus:border-mystery-pink focus:outline-none"

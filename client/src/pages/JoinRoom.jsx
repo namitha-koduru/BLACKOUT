@@ -70,10 +70,14 @@ const JoinRoom = () => {
           animate={{ opacity: 1, x: 0 }}
           className="glass-card flex-1 p-6"
         >
-          <h2 className="text-xl font-bold text-white mb-4">Enter Room Code</h2>
+          <h2 className="text-xl font-bold text-white mb-4">
+            <label htmlFor="room-code">Enter Room Code</label>
+          </h2>
           <form onSubmit={handleJoinByCode} className="flex flex-col gap-4">
             <div>
               <input
+                id="room-code"
+                name="room-code"
                 type="text"
                 maxLength={6}
                 placeholder="6-character code"

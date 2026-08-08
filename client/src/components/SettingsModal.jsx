@@ -70,7 +70,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
             {/* Volume control */}
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <span className="font-semibold text-white/90">Sound Volume</span>
+                <label htmlFor="settings-volume" className="font-semibold text-white/90">Sound Volume</label>
                 <span className="text-xs font-bold text-mystery-gold">
                   {Math.round(soundVolume * 100)}%
                 </span>
@@ -78,6 +78,8 @@ const SettingsModal = ({ isOpen, onClose }) => {
               <div className="flex items-center gap-3">
                 <span className="text-lg">{soundVolume === 0 ? '🔇' : '🔊'}</span>
                 <input
+                  id="settings-volume"
+                  name="settings-volume"
                   type="range"
                   min="0"
                   max="1"
@@ -119,8 +121,10 @@ const SettingsModal = ({ isOpen, onClose }) => {
 
             {/* Animation Speed Selector */}
             <div className="flex items-center justify-between py-1.5 border-b border-white/5">
-              <span className="font-semibold text-white/90">Animation Speed</span>
+              <label htmlFor="settings-animation-speed" className="font-semibold text-white/90">Animation Speed</label>
               <select
+                id="settings-animation-speed"
+                name="settings-animation-speed"
                 value={animationSpeed}
                 onChange={(e) => setAnimationSpeed(e.target.value)}
                 className="rounded bg-black/40 border border-white/20 px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-mystery-pink"
@@ -133,8 +137,10 @@ const SettingsModal = ({ isOpen, onClose }) => {
 
             {/* Theme Selector */}
             <div className="flex items-center justify-between py-1.5 border-b border-white/5">
-              <span className="font-semibold text-white/90">Color Theme</span>
+              <label htmlFor="settings-theme" className="font-semibold text-white/90">Color Theme</label>
               <select
+                id="settings-theme"
+                name="settings-theme"
                 value={theme}
                 onChange={(e) => setTheme(e.target.value)}
                 className="rounded bg-black/40 border border-white/20 px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-mystery-pink"

@@ -262,9 +262,15 @@ const Lobby = () => {
 
             <div className="flex flex-col gap-3.5">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-white/70">Max Players</span>
+                {isHost ? (
+                  <label htmlFor="lobby-max-players" className="text-sm text-white/70">Max Players</label>
+                ) : (
+                  <span className="text-sm text-white/70">Max Players</span>
+                )}
                 {isHost ? (
                   <select
+                    id="lobby-max-players"
+                    name="lobby-max-players"
                     value={room.settings.maxPlayers}
                     onChange={(e) => handleSettingChange('maxPlayers', Number(e.target.value))}
                     className="rounded-lg border border-white/20 bg-black/40 px-2.5 py-1 text-sm text-white focus:outline-none focus:border-mystery-pink"
@@ -281,9 +287,15 @@ const Lobby = () => {
               </div>
 
               <div className="flex justify-between items-center">
-                <span className="text-sm text-white/70">Total Rounds</span>
+                {isHost ? (
+                  <label htmlFor="lobby-total-rounds" className="text-sm text-white/70">Total Rounds</label>
+                ) : (
+                  <span className="text-sm text-white/70">Total Rounds</span>
+                )}
                 {isHost ? (
                   <select
+                    id="lobby-total-rounds"
+                    name="lobby-total-rounds"
                     value={room.settings.totalRounds}
                     onChange={(e) => handleSettingChange('totalRounds', Number(e.target.value))}
                     className="rounded-lg border border-white/20 bg-black/40 px-2.5 py-1 text-sm text-white focus:outline-none focus:border-mystery-pink"
@@ -353,7 +365,10 @@ const Lobby = () => {
 
             {/* Chat Send Form */}
             <form onSubmit={handleSendChat} className="border-t border-white/10 p-2 flex gap-2 bg-black/20">
+              <label htmlFor="lobby-chat-input" className="sr-only">Type a message</label>
               <input
+                id="lobby-chat-input"
+                name="lobby-chat-input"
                 type="text"
                 maxLength={80}
                 placeholder="Type a message..."
