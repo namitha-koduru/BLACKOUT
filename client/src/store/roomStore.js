@@ -94,6 +94,70 @@ export const useRoomStore = create((set, get) => ({
       set({ myRoleInfo: roleInfo });
     });
 
+    // --- EMERGENCY MEETINGS & VOTING LISTENERS ---
+    socket.on('meetingStarted', ({ meeting }) => {
+      toast.success('Emergency meeting called! Systems paused.', { icon: '🚨' });
+      set((state) => {
+        if (!state.room) return {};
+        return {
+          room: {
+            ...state.room,
+            gameState: 'meeting',
+            game: {
+              ...state.room.game,
+              meetingActive: true,
+              meeting,
+            },
+          },
+        };
+      });
+    });
+
+    socket.on('meetingTimer', ({ remaining }) => {
+      set({ timer: remaining });
+    });
+
+    socket.on('meetingChatMessageReceived', (msg) => {
+      set((state) => {
+        if (!state.room || !state.room.game || !state.room.game.meeting) return {};
+        const exists = state.room.game.meeting.chat.some(
+          (m) => m.timestamp === msg.timestamp && m.senderId === msg.senderId
+        );
+        if (exists) return {};
+        
+        const updatedChat = [...state.room.game.meeting.chat, msg];
+        return {
+          room: {
+            ...state.room,
+            game: {
+              ...state.room.game,
+              meeting: {
+                ...state.room.game.meeting,
+                chat: updatedChat,
+              },
+            },
+          },
+        };
+      });
+    });
+
+    socket.on('meetingEnded', () => {
+      toast('Emergency meeting resolved. Returning to map...', { icon: '⚡' });
+      set((state) => {
+        if (!state.room) return {};
+        return {
+          room: {
+            ...state.room,
+            gameState: 'exploration',
+            game: {
+              ...state.room.game,
+              meetingActive: false,
+            },
+          },
+        };
+      });
+    });
+
     socket.on('phaseChanged', ({ phase, room }) => {
       if (room) {
         set({ room });
@@ -429,6 +493,40 @@ export const useRoomStore = create((set, get) => ({
 
     return new Promise((resolve) => {
       socket.emit('trackerInspectRequest', { roomCode, playerId, targetPlayerId }, (res) => {
+        resolve(res);
+      });
+    });
+  },
+
+  // --- EMERGENCY MEETINGS & VOTING ACTIONS ---
+  callEmergencyMeeting: (roomCode, playerId) => {
+    const { socket } = get();
+    if (!socket) return Promise.resolve({ success: false, message: 'No socket connection' });
+
+    return new Promise((resolve) => {
+      socket.emit('callMeeting', { roomCode, playerId }, (res) => {
+        resolve(res);
+      });
+    });
+  },
+
+  castVote: (roomCode, playerId, targetPlayerId) => {
+    const { socket } = get();
+    if (!socket) return Promise.resolve({ success: false, message: 'No socket connection' });
+
+    return new Promise((resolve) => {
+      socket.emit('submitVote', { roomCode, playerId, targetPlayerId }, (res) => {
+        resolve(res);
+      });
+    });
+  },
+
+  sendMeetingChat: (roomCode, playerId, text) => {
+    const { socket } = get();
+    if (!socket) return Promise.resolve({ success: false, message: 'No socket connection' });
+
+    return new Promise((resolve) => {
+      socket.emit('meetingChatMessage', { roomCode, playerId, text }, (res) => {
         resolve(res);
       });
     });

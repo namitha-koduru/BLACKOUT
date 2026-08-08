@@ -3,6 +3,7 @@ import { rooms, registerRoomCleanupCallback } from './room.service.js';
 import { createSystems, getDerivedStatus } from './system.service.js';
 import { updateActiveSabotages } from './sabotage.service.js';
 import { createEvidence, sanitizeEvidence } from './evidence.service.js';
+import { cleanupRoomMeetings } from './meeting.service.js';
 
 // Centralized role metadata
 export const ROLES = {
@@ -146,6 +147,7 @@ export const clearRoomTimer = (roomCode) => {
 // Register cleanup with room service
 registerRoomCleanupCallback((roomCode) => {
   clearRoomTimer(roomCode);
+  cleanupRoomMeetings(roomCode);
 });
 
 /**
@@ -335,7 +337,7 @@ export const sanitizeRoomForPlayer = (room, playerId) => {
       const playerCopy = { ...p };
 
       if (gamePlayer) {
-        if (isGameOver || p.id === playerId) {
+        if (isGameOver || p.id === playerId || !gamePlayer.isAlive) {
           playerCopy.role = gamePlayer.role;
           playerCopy.team = gamePlayer.team;
         } else {
@@ -354,7 +356,7 @@ export const sanitizeRoomForPlayer = (room, playerId) => {
     const sanitizedGamePlayers = {};
     Object.keys(sanitized.game.players).forEach((pId) => {
       const gp = sanitized.game.players[pId];
-      if (isGameOver || pId === playerId) {
+      if (isGameOver || pId === playerId || !gp.isAlive) {
         sanitizedGamePlayers[pId] = gp;
       } else {
         sanitizedGamePlayers[pId] = {
@@ -445,6 +447,17 @@ export const sanitizeRoomForPlayer = (room, playerId) => {
 
     sanitized.game.discoveredEvidence = discoveredList;
     sanitized.game.publicTimeline = timelineList;
+
+    // 6. Mask secret vote targets inside active meeting state
+    if (sanitized.game.meeting) {
+      const mtCopy = { ...sanitized.game.meeting };
+      const maskedVotes = {};
+      Object.keys(mtCopy.votes).forEach((voterId) => {
+        maskedVotes[voterId] = true;
+      });
+      mtCopy.votes = maskedVotes;
+      sanitized.game.meeting = mtCopy;
+    }
   }
 
   return sanitized;
@@ -502,6 +515,11 @@ export const emitPrivateRoles = (room, io) => {
 export const handlePlayerMove = (roomCode, playerId, x, y) => {
   const room = rooms.get(roomCode.toUpperCase().trim());
   if (!room || !room.game) return { success: false };
+
+  // Freeze movement during active emergency meetings
+  if (room.gameState === 'meeting') {
+    return { success: false, rollback: room.game.players[playerId]?.position };
+  }
 
   // Validate game phase and player state
   if (room.game.phase !== 'exploration') {

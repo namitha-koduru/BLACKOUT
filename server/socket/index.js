@@ -6,6 +6,7 @@ import * as blackoutService from '../services/blackout.service.js';
 import { cleanupPlayerRepairSessions, startRepair, completeRepair, failRepair } from '../services/system.service.js';
 import { useSabotage } from '../services/sabotage.service.js';
 import { discoverEvidence, corruptEvidence, inspectTrackerTrace, sanitizeEvidence } from '../services/evidence.service.js';
+import { startMeeting, submitVote, addMeetingChatMessage } from '../services/meeting.service.js';
 
 export const initSocket = (httpServer) => {
   const io = new Server(httpServer, {
@@ -234,6 +235,58 @@ export const initSocket = (httpServer) => {
 
         if (typeof callback === 'function') {
           callback({ success: true, traces: sanitizedTraces });
+        }
+      } catch (err) {
+        if (typeof callback === 'function') {
+          callback({ success: false, message: err.message });
+        }
+      }
+    });
+
+    // --- EMERGENCY MEETINGS & VOTING EVENTS ---
+    socket.on('callMeeting', ({ roomCode, playerId }, callback) => {
+      try {
+        const room = roomService.getRoom(roomCode);
+        startMeeting(room, playerId, io);
+
+        if (typeof callback === 'function') {
+          callback({ success: true });
+        }
+
+        // Broadcast updated room state immediately
+        blackoutService.broadcastRoomState(room, io);
+      } catch (err) {
+        if (typeof callback === 'function') {
+          callback({ success: false, message: err.message });
+        }
+      }
+    });
+
+    socket.on('submitVote', ({ roomCode, playerId, targetPlayerId }, callback) => {
+      try {
+        const room = roomService.getRoom(roomCode);
+        submitVote(room, playerId, targetPlayerId, io);
+
+        if (typeof callback === 'function') {
+          callback({ success: true });
+        }
+
+        // Broadcast updated state (hides target vote, shows checkmark hasVoted indicator)
+        blackoutService.broadcastRoomState(room, io);
+      } catch (err) {
+        if (typeof callback === 'function') {
+          callback({ success: false, message: err.message });
+        }
+      }
+    });
+
+    socket.on('meetingChatMessage', ({ roomCode, playerId, text }, callback) => {
+      try {
+        const room = roomService.getRoom(roomCode);
+        addMeetingChatMessage(room, playerId, text, io);
+
+        if (typeof callback === 'function') {
+          callback({ success: true });
         }
       } catch (err) {
         if (typeof callback === 'function') {

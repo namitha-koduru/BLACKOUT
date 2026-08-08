@@ -11,6 +11,8 @@ import SystemPanel from '../components/SystemPanel.jsx';
 import SabotagePanel from '../components/SabotagePanel.jsx';
 import SabotageButton from '../components/SabotageButton.jsx';
 import InvestigationPanel from '../components/InvestigationPanel.jsx';
+import MeetingScreen from '../components/MeetingScreen.jsx';
+import EliminatedOverlay from '../components/EliminatedOverlay.jsx';
 
 const ROLE_THEME_FALLBACKS = {
   Engineer: { color: 'text-cyan-400', icon: '⚙️' },
@@ -42,6 +44,7 @@ const BlackoutGame = () => {
   const isHost = room.hostId === playerId;
 
   // Safe fallback UI parameters
+  const myPlayerAlive = room?.game?.players?.[playerId]?.isAlive === true;
   const myRoleName = myRoleInfo?.role || 'Crew';
   const myTeamName = myRoleInfo?.team || 'crew';
   const fallbackMeta = ROLE_THEME_FALLBACKS[myRoleName] || ROLE_THEME_FALLBACKS.Crew;
@@ -309,6 +312,16 @@ const BlackoutGame = () => {
       {/* INVESTIGATION PANEL MODAL */}
       {investigateOpen && (
         <InvestigationPanel onClose={() => setInvestigateOpen(false)} />
+      )}
+
+      {/* EMERGENCY MEETING OVERLAY SCREEN */}
+      {room.gameState === 'meeting' && (
+        <MeetingScreen />
+      )}
+
+      {/* ELIMINATED SPECTATOR RIBBON */}
+      {!myPlayerAlive && room.gameState !== 'meeting' && (
+        <EliminatedOverlay role={myRoleName} />
       )}
     </div>
   );

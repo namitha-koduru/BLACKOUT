@@ -109,3 +109,8 @@ blackout/
 * **`investigationRequest`** *(Client -> Server)*: Request evidence discovery from an interactive console terminal. Enforces 5s cooldowns and Comms checks.
 * **`evidenceCorruptRequest`** *(Client -> Server)*: hacker ability to overwrite evidence subject details and descriptions with false logs.
 * **`trackerInspectRequest`** *(Client -> Server)*: tracker ability to query a target player's recent movement history.
+
+### Emergency Meetings & Voting
+* **`callMeeting`** *(Client -> Server)*: Initiates emergency meeting. Pauses systems, resets coordinates, and opens discussion channels.
+* **`submitVote`** *(Client -> Server)*: Casts secret vote (or Skip). Validates living status and blocks self-voting.
+* **`meetingChatMessage`** *(Client -> Server)*: Transmits discussion messages during active meeting. Restricted to surviving players.

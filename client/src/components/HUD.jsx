@@ -2,6 +2,8 @@
 import React from 'react';
 import RestorationBar from './RestorationBar.jsx';
 import { useRoomStore } from '../store/roomStore.js';
+import { useUserStore } from '../store/userStore.js';
+import toast from 'react-hot-toast';
 
 const ROLE_SPECIALIZATIONS = {
   Engineer: { badge: '⚡ RAPID REPAIR', desc: 'System repairs are 1.5x more effective.' },
@@ -17,6 +19,27 @@ const ROLE_SPECIALIZATIONS = {
 
 const HUD = ({ currentRoom, myRoleInfo, onInvestigateClick }) => {
   const room = useRoomStore((state) => state.room);
+  const playerId = useUserStore((state) => state.playerId);
+  const callEmergencyMeeting = useRoomStore((state) => state.callEmergencyMeeting);
+
+  const gp = room?.game?.players?.[playerId];
+  const isAlive = gp?.isAlive === true;
+  const isMeetingCooldownActive = room?.game?.meetingCooldownEndsAt && Date.now() < room.game.meetingCooldownEndsAt;
+  const hasUsedMeeting = room?.game?.meetingUsedByPlayer?.[playerId] === true;
+
+  const handleCallMeeting = async () => {
+    if (!isAlive) return;
+    try {
+      const res = await callEmergencyMeeting(room.roomCode, playerId);
+      if (res.success) {
+        toast.success('Emergency siren activated!', { icon: '🚨' });
+      } else {
+        toast.error(res.message || 'Siren activation rejected.');
+      }
+    } catch (err) {
+      toast.error('Emergency trigger fault.');
+    }
+  };
 
   // Calculate restoration progress from critical systems health
   const systems = room?.game?.systems || {};
@@ -66,13 +89,26 @@ const HUD = ({ currentRoom, myRoleInfo, onInvestigateClick }) => {
             🔍 INVESTIGATE
           </button>
 
-          {/* Emergency Meeting Button (Disabled) */}
+          {/* Emergency Meeting Button */}
           <button
-            disabled
-            className="px-4 py-2 bg-red-500/5 border border-red-500/20 text-red-500/45 rounded-lg text-xs font-bold uppercase tracking-wider cursor-not-allowed select-none flex items-center gap-1.5 transition-all"
-            title="Emergency meeting siren disabled"
+            onClick={handleCallMeeting}
+            disabled={!isAlive || isMeetingCooldownActive || hasUsedMeeting}
+            className={`px-4 py-2 border rounded-lg text-xs font-bold uppercase tracking-wider select-none flex items-center gap-1.5 transition-all active:scale-95 ${
+              !isAlive || isMeetingCooldownActive || hasUsedMeeting
+                ? 'bg-red-950/10 border-red-950/20 text-red-500/30 cursor-not-allowed'
+                : 'bg-red-600 hover:bg-red-700 border-red-500 text-white shadow-[0_0_12px_rgba(239,68,68,0.2)] cursor-pointer'
+            }`}
+            title={
+              !isAlive
+                ? 'Eliminated players cannot call meetings'
+                : hasUsedMeeting
+                ? 'Meeting allowance used this round'
+                : isMeetingCooldownActive
+                ? 'Emergency siren cooling down'
+                : 'Initiate emergency meeting'
+            }
           >
-            🚨 CALL MEETING
+            🚨 {hasUsedMeeting ? 'USED' : 'CALL MEETING'}
           </button>
         </div>
       </div>

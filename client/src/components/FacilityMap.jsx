@@ -196,7 +196,7 @@ const FacilityMap = ({ onRoomChange }) => {
       let dx = 0;
       let dy = 0;
 
-      if (!activeRepairSession) {
+      if (!activeRepairSession && room.gameState !== 'meeting') {
         if (activeKeys.current['w'] || activeKeys.current['arrowup']) dy -= 1;
         if (activeKeys.current['s'] || activeKeys.current['arrowdown']) dy += 1;
         if (activeKeys.current['a'] || activeKeys.current['arrowleft']) dx -= 1;
