@@ -5,6 +5,7 @@ import * as roomService from '../services/room.service.js';
 import * as blackoutService from '../services/blackout.service.js';
 import { cleanupPlayerRepairSessions, startRepair, completeRepair, failRepair } from '../services/system.service.js';
 import { useSabotage } from '../services/sabotage.service.js';
+import { discoverEvidence, corruptEvidence, inspectTrackerTrace, sanitizeEvidence } from '../services/evidence.service.js';
 
 export const initSocket = (httpServer) => {
   const io = new Server(httpServer, {
@@ -175,6 +176,65 @@ export const initSocket = (httpServer) => {
 
         // Broadcast the updated state to all room sockets
         blackoutService.broadcastRoomState(room, io);
+      } catch (err) {
+        if (typeof callback === 'function') {
+          callback({ success: false, message: err.message });
+        }
+      }
+    });
+
+    // --- EVIDENCE & INVESTIGATION EVENTS ---
+    socket.on('investigationRequest', ({ roomCode, playerId, terminalId }, callback) => {
+      try {
+        const room = roomService.getRoom(roomCode);
+        const evidence = discoverEvidence(room, playerId, terminalId);
+
+        if (typeof callback === 'function') {
+          callback({ success: true, evidence });
+        }
+
+        // Notify client and other players of updated discoveries
+        blackoutService.broadcastRoomState(room, io);
+      } catch (err) {
+        if (typeof callback === 'function') {
+          callback({ success: false, message: err.message });
+        }
+      }
+    });
+
+    socket.on('evidenceCorruptRequest', ({ roomCode, playerId, evidenceId, falseSubjectId, falseTargetId, falseDescription }, callback) => {
+      try {
+        const room = roomService.getRoom(roomCode);
+        corruptEvidence(room, playerId, evidenceId, falseSubjectId, falseTargetId, falseDescription);
+
+        if (typeof callback === 'function') {
+          callback({ success: true });
+        }
+
+        // Broadcast updated states (masked/corrupted descriptions) to everyone
+        blackoutService.broadcastRoomState(room, io);
+      } catch (err) {
+        if (typeof callback === 'function') {
+          callback({ success: false, message: err.message });
+        }
+      }
+    });
+
+    socket.on('trackerInspectRequest', ({ roomCode, playerId, targetPlayerId }, callback) => {
+      try {
+        const room = roomService.getRoom(roomCode);
+        const traces = inspectTrackerTrace(room, playerId, targetPlayerId);
+
+        // Sanitize movement trace descriptions before returning to client
+        const playersMap = {};
+        room.players.forEach(p => { playersMap[p.id] = p; });
+        const pGame = room.game.players[playerId];
+
+        const sanitizedTraces = traces.map(t => sanitizeEvidence(t, playerId, pGame?.role, pGame?.team, playersMap));
+
+        if (typeof callback === 'function') {
+          callback({ success: true, traces: sanitizedTraces });
+        }
       } catch (err) {
         if (typeof callback === 'function') {
           callback({ success: false, message: err.message });

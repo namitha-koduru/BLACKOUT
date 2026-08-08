@@ -32,7 +32,7 @@ const WALKABLE_AREAS = [
   { name: 'HALLWAY_GENERATOR_EXIT', x: 950, y: 550, w: 50, h: 100, type: 'hallway' }
 ];
 
-// Interactive System Console Coordinates
+// Interactive System Console Coordinates (Investigate & Repair)
 const SYSTEM_CONSOLES = [
   { id: 'generator', name: 'Generator', room: 'GENERATOR', x: 975, y: 425 },
   { id: 'communications', name: 'Communications', room: 'COMMUNICATIONS', x: 600, y: 725 },
@@ -56,6 +56,7 @@ const FacilityMap = ({ onRoomChange }) => {
   const sendPlayerStopped = useRoomStore((state) => state.sendPlayerStopped);
   const setOnMovementError = useRoomStore((state) => state.setOnMovementError);
   const startRepair = useRoomStore((state) => state.startRepair);
+  const discoverTerminalEvidence = useRoomStore((state) => state.discoverTerminalEvidence);
 
   // Fallback initial position
   const myInitialPos = room?.game?.players[playerId]?.position || { x: 600, y: 450 };
@@ -64,8 +65,9 @@ const FacilityMap = ({ onRoomChange }) => {
   const [posY, setPosY] = useState(myInitialPos.y);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600, scale: 0.5 });
 
-  // System repair state
+  // Interaction proximities
   const [nearSystem, setNearSystem] = useState(null);
+  const [nearTerminal, setNearTerminal] = useState(null);
   const [activeRepairSession, setActiveRepairSession] = useState(null);
 
   const activeKeys = useRef({});
@@ -103,7 +105,7 @@ const FacilityMap = ({ onRoomChange }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Keyboard Event Listeners (WASD + Arrows)
+  // Keyboard Event Listeners
   useEffect(() => {
     const handleKeyDown = (e) => {
       const key = e.key.toLowerCase();
@@ -137,7 +139,7 @@ const FacilityMap = ({ onRoomChange }) => {
     return () => setOnMovementError(null);
   }, [setOnMovementError]);
 
-  // Repair start listener (Triggered by pressing 'e')
+  // Repair keybind (E)
   useEffect(() => {
     const handleKeyDown = async (e) => {
       if (e.key.toLowerCase() === 'e') {
@@ -159,6 +161,29 @@ const FacilityMap = ({ onRoomChange }) => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [nearSystem, activeRepairSession, room, playerId, startRepair]);
+
+  // Investigation keybind (I)
+  useEffect(() => {
+    const handleKeyDown = async (e) => {
+      if (e.key.toLowerCase() === 'i') {
+        if (nearTerminal && room?.gameState === 'exploration' && !activeRepairSession) {
+          try {
+            const res = await discoverTerminalEvidence(room.roomCode, playerId, nearTerminal.id);
+            if (res.success) {
+              toast.success(`LOG RETRIEVED: ${res.evidence.description.substring(0, 45)}...`, { icon: '🔍' });
+            } else {
+              toast.error(res.message || 'Terminal database locked.');
+            }
+          } catch (err) {
+            toast.error('Terminal query interface error.');
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [nearTerminal, room, playerId, discoverTerminalEvidence, activeRepairSession]);
 
   // Movement update loop
   useEffect(() => {
@@ -225,22 +250,25 @@ const FacilityMap = ({ onRoomChange }) => {
         sendPlayerStopped(room.roomCode, playerId, posX, posY);
       }
 
-      // Proximity check to system consoles
+      // Proximity check to system consoles & terminals
       let closestSystem = null;
+      let closestTerminal = null;
       let minDistance = 150;
 
       SYSTEM_CONSOLES.forEach((sys) => {
-        const sysState = room?.game?.systems?.[sys.id];
-        if (!sysState || sysState.health >= 100) return;
-
         const dist = Math.hypot(posX - sys.x, posY - sys.y);
         if (dist < minDistance) {
-          minDistance = dist;
-          closestSystem = { id: sys.id, name: sys.name, health: sysState.health };
+          closestTerminal = { id: sys.id, name: sys.name };
+          
+          const sysState = room?.game?.systems?.[sys.id];
+          if (sysState && sysState.health < 100) {
+            closestSystem = { id: sys.id, name: sys.name, health: sysState.health };
+          }
         }
       });
 
       setNearSystem(closestSystem);
+      setNearTerminal(closestTerminal);
 
       loopRef.current = requestAnimationFrame(gameLoop);
     };
@@ -265,6 +293,21 @@ const FacilityMap = ({ onRoomChange }) => {
         });
       } else {
         toast.error(res.message || 'System interface unresponsive.');
+      }
+    }
+  };
+
+  const handleProximityInvestigationStart = async () => {
+    if (nearTerminal && !activeRepairSession) {
+      try {
+        const res = await discoverTerminalEvidence(room.roomCode, playerId, nearTerminal.id);
+        if (res.success) {
+          toast.success(`LOG RETRIEVED: ${res.evidence.description.substring(0, 45)}...`, { icon: '🔍' });
+        } else {
+          toast.error(res.message || 'Terminal database locked.');
+        }
+      } catch (err) {
+        toast.error('Terminal query interface error.');
       }
     }
   };
@@ -379,7 +422,7 @@ const FacilityMap = ({ onRoomChange }) => {
         })()}
       </div>
 
-      {/* FLOATING PROXIMITY INTERACTION BANNER */}
+      {/* FLOATING PROXIMITY INTERACTION BANNER (REPAIR) */}
       {nearSystem && !activeRepairSession && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/90 border border-cyan-500/30 rounded-xl px-4 py-2 flex items-center gap-3 z-30 shadow-lg animate-bounce select-none">
           <span className="bg-cyan-500 text-black px-1.5 py-0.5 rounded font-black text-xs font-mono">E</span>
@@ -391,6 +434,22 @@ const FacilityMap = ({ onRoomChange }) => {
             className="px-2.5 py-0.5 bg-cyan-500 hover:bg-cyan-400 text-black text-[10px] font-black uppercase tracking-wider rounded transition-colors"
           >
             START
+          </button>
+        </div>
+      )}
+
+      {/* FLOATING PROXIMITY INTERACTION BANNER (INVESTIGATE) */}
+      {nearTerminal && !activeRepairSession && (
+        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 bg-black/90 border border-cyan-500/30 rounded-xl px-4 py-2 flex items-center gap-3 z-30 shadow-lg animate-bounce select-none">
+          <span className="bg-cyan-500 text-black px-1.5 py-0.5 rounded font-black text-xs font-mono">I</span>
+          <span className="text-xs font-bold text-slate-100">
+            INVESTIGATE {nearTerminal.name} TERMINAL
+          </span>
+          <button
+            onClick={handleProximityInvestigationStart}
+            className="px-2.5 py-0.5 bg-cyan-500 hover:bg-cyan-400 text-black text-[10px] font-black uppercase tracking-wider rounded transition-colors"
+          >
+            ACCESS
           </button>
         </div>
       )}

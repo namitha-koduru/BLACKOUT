@@ -2,6 +2,7 @@
 import { rooms, registerRoomCleanupCallback } from './room.service.js';
 import { createSystems, getDerivedStatus } from './system.service.js';
 import { updateActiveSabotages } from './sabotage.service.js';
+import { createEvidence, sanitizeEvidence } from './evidence.service.js';
 
 // Centralized role metadata
 export const ROLES = {
@@ -409,6 +410,41 @@ export const sanitizeRoomForPlayer = (room, playerId) => {
     sanitized.game.blackoutActive = sanitized.game.blackoutActive || false;
     sanitized.game.communicationsDisabled = sanitized.game.communicationsDisabled || false;
     sanitized.game.securityDegraded = sanitized.game.securityDegraded || false;
+
+    // 5. Package player-specific discovered evidence logs and public timeline
+    const discoveredList = [];
+    const timelineList = [];
+    const playersMap = {};
+    room.players.forEach((p) => {
+      playersMap[p.id] = p;
+    });
+
+    const pGame = room.game.players[playerId];
+
+    if (room.game.evidence) {
+      room.game.evidence.forEach((ev) => {
+        // Discovered list
+        if (ev.discoveredBy.includes(playerId)) {
+          const sanitizedEv = sanitizeEvidence(ev, playerId, pGame?.role, pGame?.team, playersMap);
+          if (sanitizedEv) {
+            discoveredList.push(sanitizedEv);
+          }
+        }
+        // Public logs timeline (e.g. system events, repairs, locks, comms)
+        if (['SYSTEM_EVENT', 'REPAIR_LOG', 'DOOR_LOG', 'COMMUNICATION_LOG'].includes(ev.type)) {
+          const sanitizedTimeline = sanitizeEvidence(ev, playerId, pGame?.role, pGame?.team, playersMap);
+          if (sanitizedTimeline) {
+            timelineList.push({
+              timestamp: sanitizedTimeline.timestamp,
+              description: sanitizedTimeline.description,
+            });
+          }
+        }
+      });
+    }
+
+    sanitized.game.discoveredEvidence = discoveredList;
+    sanitized.game.publicTimeline = timelineList;
   }
 
   return sanitized;
@@ -518,6 +554,12 @@ export const handlePlayerMove = (roomCode, playerId, x, y) => {
   if (newRoom !== lastRoom) {
     pGame.currentRoom = newRoom;
     roomChanged = true;
+
+    // Record movement security logs and traces
+    if (newRoom && !newRoom.startsWith('HALLWAY_')) {
+      createEvidence(room, 'SECURITY_LOG', newRoom, playerId, newRoom, `${pGame.name || 'Player'} entered ${newRoom} Room.`);
+    }
+    createEvidence(room, 'MOVEMENT_TRACE', newRoom, playerId, newRoom, `${pGame.name || 'Player'} traversed to ${newRoom}.`);
   }
 
   // Sync state variables mapped to room.players
@@ -608,6 +650,7 @@ export const startGame = (roomCode, io, hostId) => {
     players: gamePlayers,
     systems: createSystems(),
     evidence: [],
+    investigationCooldowns: {},
     blackoutActive: false,
     communicationsDisabled: false,
     securityDegraded: false,

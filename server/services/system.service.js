@@ -1,4 +1,5 @@
 // services/system.service.js
+import { createEvidence } from './evidence.service.js';
 
 export const SYSTEM_CONSOLES = {
   generator: { id: 'generator', name: 'Generator', room: 'GENERATOR', x: 975, y: 425 },
@@ -221,9 +222,20 @@ export const completeRepair = (room, playerId, systemId, repairSessionId) => {
   const baseRepair = 20;
   const reward = Math.round(baseRepair * multiplier);
 
+  const previousHealth = system.health;
   system.health = Math.min(100, system.health + reward);
   system.status = getDerivedStatus(system.health);
   system.lastUpdated = Date.now();
+
+  // Record repair log evidence
+  createEvidence(
+    room,
+    'REPAIR_LOG',
+    system.room,
+    playerId,
+    systemId,
+    `System ${system.name} repaired by ${pGame.name || 'Player'}. Health: ${previousHealth} -> ${system.health}.`
+  );
 
   // Add event to timeline log if system fully restored
   if (system.health === 100) {

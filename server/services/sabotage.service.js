@@ -1,5 +1,6 @@
 // services/sabotage.service.js
 import { getDerivedStatus } from './system.service.js';
+import { createEvidence } from './evidence.service.js';
 
 export const SABOTAGE_COOLDOWNS = {
   generator: 25000,        // 25s
@@ -97,6 +98,7 @@ export const useSabotage = (room, playerId, sabotageType, targetId) => {
   if (sabotageType === 'generator') {
     const system = room.game.systems.generator;
     if (system) {
+      const previousHealth = system.health;
       system.health = Math.max(0, system.health - 25);
       system.status = getDerivedStatus(system.health);
       system.lastUpdated = now;
@@ -104,6 +106,9 @@ export const useSabotage = (room, playerId, sabotageType, targetId) => {
         timestamp: now,
         text: 'Generator health damaged by sabotage.',
       });
+      // Generate evidence
+      createEvidence(room, 'SYSTEM_EVENT', 'GENERATOR', playerId, 'generator', `Generator integrity health dropped: ${previousHealth}% -> ${system.health}%. Cause: UNKNOWN.`);
+      createEvidence(room, 'SABOTAGE_TRACE', 'GENERATOR', playerId, 'generator', `Generator sabotage occurred.`, 'HIGH', playerId);
     }
   } else if (sabotageType === 'communications') {
     expiresAt = now + 20000; // 20s
@@ -113,6 +118,9 @@ export const useSabotage = (room, playerId, sabotageType, targetId) => {
       timestamp: now,
       text: 'Facility communications hijacked.',
     });
+    // Generate evidence
+    createEvidence(room, 'COMMUNICATION_LOG', 'COMMUNICATIONS', playerId, 'communications', `Communications offline status active. Duration: 20 seconds. Cause: UNKNOWN.`);
+    createEvidence(room, 'SABOTAGE_TRACE', 'COMMUNICATIONS', playerId, 'communications', `Communications sabotage occurred.`, 'HIGH', playerId);
   } else if (sabotageType === 'security') {
     expiresAt = now + 25000; // 25s
     room.game.securityDegraded = true;
@@ -121,6 +129,9 @@ export const useSabotage = (room, playerId, sabotageType, targetId) => {
       timestamp: now,
       text: 'Facility security systems degraded.',
     });
+    // Generate evidence
+    createEvidence(room, 'SYSTEM_EVENT', 'SECURITY', playerId, 'security', `Security databases connection degraded. Cause: UNKNOWN.`);
+    createEvidence(room, 'SABOTAGE_TRACE', 'SECURITY', playerId, 'security', `Security sabotage occurred.`, 'HIGH', playerId);
   } else if (sabotageType === 'door_lockdown') {
     expiresAt = now + 15000; // 15s
     room.game.sabotages.lockedDoors[targetId] = expiresAt;
@@ -128,6 +139,9 @@ export const useSabotage = (room, playerId, sabotageType, targetId) => {
       timestamp: now,
       text: `Hallway door locked: ${targetId}`,
     });
+    // Generate evidence
+    createEvidence(room, 'DOOR_LOG', targetId, playerId, targetId, `Door lockdown triggered on ${targetId}. Duration: 15 seconds.`);
+    createEvidence(room, 'SABOTAGE_TRACE', targetId, playerId, targetId, `Door lockdown sabotage occurred.`, 'HIGH', playerId);
   } else if (sabotageType === 'power_blackout') {
     expiresAt = now + 15000; // 15s
     room.game.blackoutActive = true;
@@ -136,6 +150,9 @@ export const useSabotage = (room, playerId, sabotageType, targetId) => {
       timestamp: now,
       text: 'Facility blackout: Backup power failure.',
     });
+    // Generate evidence
+    createEvidence(room, 'SYSTEM_EVENT', 'FACILITY', playerId, 'blackout', `Facility main power failure. Backup systems online. Duration: 15 seconds.`);
+    createEvidence(room, 'SABOTAGE_TRACE', 'FACILITY', playerId, 'blackout', `Power blackout sabotage occurred.`, 'HIGH', playerId);
   } else if (sabotageType === 'system_corruption') {
     expiresAt = now + 20000; // 20s
     const targetSystem = room.game.systems[targetId];
@@ -150,6 +167,8 @@ export const useSabotage = (room, playerId, sabotageType, targetId) => {
         timestamp: now,
         text: `System integrity records corrupted for: ${targetSystem.name}`,
       });
+      // Sabotage trace only (internal)
+      createEvidence(room, 'SABOTAGE_TRACE', targetId, playerId, targetId, `System integrity corruption sabotage occurred on ${targetId}.`, 'HIGH', playerId);
     }
   }
 

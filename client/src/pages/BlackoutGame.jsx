@@ -10,6 +10,7 @@ import HUD from '../components/HUD.jsx';
 import SystemPanel from '../components/SystemPanel.jsx';
 import SabotagePanel from '../components/SabotagePanel.jsx';
 import SabotageButton from '../components/SabotageButton.jsx';
+import InvestigationPanel from '../components/InvestigationPanel.jsx';
 
 const ROLE_THEME_FALLBACKS = {
   Engineer: { color: 'text-cyan-400', icon: '⚙️' },
@@ -33,6 +34,7 @@ const BlackoutGame = () => {
 
   const [currentLocalRoom, setCurrentLocalRoom] = useState('CENTRAL HUB');
   const [sabPanelOpen, setSabPanelOpen] = useState(false);
+  const [investigateOpen, setInvestigateOpen] = useState(false);
 
   if (!room || !room.game) return null;
 
@@ -159,7 +161,11 @@ const BlackoutGame = () => {
                 <div className="flex-grow min-h-[400px]">
                   <FacilityMap onRoomChange={setCurrentLocalRoom} />
                 </div>
-                <HUD currentRoom={currentLocalRoom} myRoleInfo={myRoleInfo} />
+                <HUD
+                  currentRoom={currentLocalRoom}
+                  myRoleInfo={myRoleInfo}
+                  onInvestigateClick={() => setInvestigateOpen(true)}
+                />
                 
                 {isHost && (
                   <div className="text-right">
@@ -299,6 +305,11 @@ const BlackoutGame = () => {
           </div>
         </section>
       </main>
+
+      {/* INVESTIGATION PANEL MODAL */}
+      {investigateOpen && (
+        <InvestigationPanel onClose={() => setInvestigateOpen(false)} />
+      )}
     </div>
   );
 };

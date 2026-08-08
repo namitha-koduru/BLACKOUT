@@ -399,4 +399,38 @@ export const useRoomStore = create((set, get) => ({
       });
     });
   },
+
+  // --- EVIDENCE & INVESTIGATION ACTIONS ---
+  discoverTerminalEvidence: (roomCode, playerId, terminalId) => {
+    const { socket } = get();
+    if (!socket) return Promise.resolve({ success: false, message: 'No socket connection' });
+
+    return new Promise((resolve) => {
+      socket.emit('investigationRequest', { roomCode, playerId, terminalId }, (res) => {
+        resolve(res);
+      });
+    });
+  },
+
+  corruptEvidenceRecord: (roomCode, playerId, evidenceId, falseSubjectId, falseTargetId, falseDescription) => {
+    const { socket } = get();
+    if (!socket) return Promise.resolve({ success: false, message: 'No socket connection' });
+
+    return new Promise((resolve) => {
+      socket.emit('evidenceCorruptRequest', { roomCode, playerId, evidenceId, falseSubjectId, falseTargetId, falseDescription }, (res) => {
+        resolve(res);
+      });
+    });
+  },
+
+  requestTrackerTrace: (roomCode, playerId, targetPlayerId) => {
+    const { socket } = get();
+    if (!socket) return Promise.resolve({ success: false, message: 'No socket connection' });
+
+    return new Promise((resolve) => {
+      socket.emit('trackerInspectRequest', { roomCode, playerId, targetPlayerId }, (res) => {
+        resolve(res);
+      });
+    });
+  },
 }));

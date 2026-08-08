@@ -104,3 +104,8 @@ blackout/
 * **`startRepair`** *(Client -> Server)*: Request a repair session on a system console. Returns a validation token and a random mini-game type (1 to 5).
 * **`completeRepair`** *(Client -> Server)*: Submit successful completion of a mini-game, increasing system health (+20 normally, +30 for Engineer/Operator).
 * **`failRepair`** *(Client -> Server)*: Cleans up active repair sessions when players cancel or fail tasks.
+
+### Evidence & Investigation
+* **`investigationRequest`** *(Client -> Server)*: Request evidence discovery from an interactive console terminal. Enforces 5s cooldowns and Comms checks.
+* **`evidenceCorruptRequest`** *(Client -> Server)*: hacker ability to overwrite evidence subject details and descriptions with false logs.
+* **`trackerInspectRequest`** *(Client -> Server)*: tracker ability to query a target player's recent movement history.

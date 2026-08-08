@@ -15,7 +15,7 @@ const ROLE_SPECIALIZATIONS = {
   Mimic: { badge: '🎭 IDENTITY DISGUISE', desc: 'Conceal tracker scans (Disabled)' },
 };
 
-const HUD = ({ currentRoom, myRoleInfo }) => {
+const HUD = ({ currentRoom, myRoleInfo, onInvestigateClick }) => {
   const room = useRoomStore((state) => state.room);
 
   // Calculate restoration progress from critical systems health
@@ -57,13 +57,13 @@ const HUD = ({ currentRoom, myRoleInfo }) => {
             ⚡ ABILITY
           </button>
 
-          {/* Investigation Button (Disabled) */}
+          {/* Investigation Button */}
           <button
-            disabled
-            className="px-4 py-2 bg-blue-500/5 border border-blue-500/20 text-blue-500/40 rounded-lg text-xs font-bold uppercase tracking-wider cursor-not-allowed select-none flex items-center gap-1.5 transition-all"
-            title="Investigation database not active"
+            onClick={onInvestigateClick}
+            className="px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-400 rounded-lg text-xs font-bold uppercase tracking-wider select-none flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 shadow-[0_0_10px_rgba(59,130,246,0.15)]"
+            title="Open investigation dashboard"
           >
-            📂 INVESTIGATE
+            🔍 INVESTIGATE
           </button>
 
           {/* Emergency Meeting Button (Disabled) */}
