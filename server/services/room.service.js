@@ -174,7 +174,7 @@ export const leaveRoom = (roomCode, playerId) => {
 
   // If room is now empty, delete it
   if (room.players.length === 0 && room.spectators.length === 0) {
-    rooms.delete(code);
+    deleteRoom(code);
     return null;
   }
 
@@ -450,11 +450,16 @@ export const deleteRoom = (roomCode) => {
     }
   });
 
-  // Clear active countdown interval if in-game
-  if (room.game && room.game.timerIntervalId) {
-    clearInterval(room.game.timerIntervalId);
-    room.game.timerIntervalId = null;
+  // Trigger external cleanup callback (e.g. for game.service to clear its own timers/timeouts)
+  if (roomCleanupCallback) {
+    roomCleanupCallback(code);
   }
 
   rooms.delete(code);
+};
+
+let roomCleanupCallback = null;
+
+export const registerRoomCleanupCallback = (cb) => {
+  roomCleanupCallback = cb;
 };

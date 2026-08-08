@@ -34,6 +34,7 @@ export const useRoomStore = create((set, get) => ({
     socket.off('tradeRequested');
     socket.off('tradeRejected');
     socket.off('tradeCancelled');
+    socket.off('tradeExpired');
     socket.off('gameFinished');
 
     socket.on('roomUpdated', (room) => {
@@ -133,6 +134,12 @@ export const useRoomStore = create((set, get) => ({
 
     socket.on('tradeCancelled', () => {
       set({ incomingTrade: null });
+      playSound('trade_rejected');
+    });
+
+    socket.on('tradeExpired', () => {
+      toast.error('Trade request expired.');
+      set({ incomingTrade: null, outgoingTrade: null });
       playSound('trade_rejected');
     });
 

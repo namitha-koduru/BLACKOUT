@@ -1,5 +1,56 @@
 // services/game.service.js
-import { rooms } from './room.service.js';
+import { rooms, registerRoomCleanupCallback } from './room.service.js';
+
+// Module-level storage for timers and timeouts
+const roomTimers = new Map(); // roomCode -> IntervalId
+const tradeTimeouts = new Map(); // tradeId -> TimeoutId
+const roomTradeTimeouts = new Map(); // roomCode -> Set of tradeIds
+
+export const clearRoomTimer = (roomCode) => {
+  const code = roomCode.toUpperCase().trim();
+  const existingTimer = roomTimers.get(code);
+  if (existingTimer) {
+    clearInterval(existingTimer);
+    roomTimers.delete(code);
+  }
+};
+
+const clearTradeTimeout = (tradeId) => {
+  const timeoutId = tradeTimeouts.get(tradeId);
+  if (timeoutId) {
+    clearTimeout(timeoutId);
+    tradeTimeouts.delete(tradeId);
+  }
+  for (const [code, tradeSet] of roomTradeTimeouts.entries()) {
+    if (tradeSet.has(tradeId)) {
+      tradeSet.delete(tradeId);
+      if (tradeSet.size === 0) {
+        roomTradeTimeouts.delete(code);
+      }
+      break;
+    }
+  }
+};
+
+export const clearAllTradeTimeoutsForRoom = (roomCode) => {
+  const code = roomCode.toUpperCase().trim();
+  const tradeSet = roomTradeTimeouts.get(code);
+  if (tradeSet) {
+    tradeSet.forEach((tradeId) => {
+      const timeoutId = tradeTimeouts.get(tradeId);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        tradeTimeouts.delete(tradeId);
+      }
+    });
+    roomTradeTimeouts.delete(code);
+  }
+};
+
+registerRoomCleanupCallback((roomCode) => {
+  clearRoomTimer(roomCode);
+  clearAllTradeTimeoutsForRoom(roomCode);
+});
 
 // Box definitions and weights for randomization
 const BOX_TYPES = [
@@ -59,6 +110,10 @@ export const startGame = (roomCode, io) => {
     throw new Error('Need at least 2 players to start the game.');
   }
 
+  // Clear existing timers before creating game object
+  clearRoomTimer(room.roomCode);
+  clearAllTradeTimeoutsForRoom(room.roomCode);
+
   // Clear ready states, reset scores
   room.players.forEach((p) => {
     p.score = 0;
@@ -93,32 +148,36 @@ const startPhaseTimer = (roomCode, io) => {
   if (!room || !room.game) return;
 
   // Clear any existing timer
-  if (room.game.timerIntervalId) {
-    clearInterval(room.game.timerIntervalId);
-  }
+  clearRoomTimer(roomCode);
+
+  const durationMs = room.game.timer * 1000;
+  const phaseEndsAt = Date.now() + durationMs;
 
   io.to(roomCode).emit('timerUpdated', { timer: room.game.timer });
+
+  console.log(`[GAME TIMER] room=${roomCode} phase=${room.gameState.toUpperCase()} duration=${room.game.timer} timerStarted=${new Date().toISOString()}`);
 
   const timerIntervalId = setInterval(() => {
     const r = rooms.get(roomCode);
     if (!r || !r.game) {
-      clearInterval(timerIntervalId);
+      clearRoomTimer(roomCode);
       return;
     }
 
-    r.game.timer -= 1;
+    const remainingSeconds = Math.ceil((phaseEndsAt - Date.now()) / 1000);
+    r.game.timer = Math.max(0, remainingSeconds);
+
+    console.log(`[GAME TIMER] room=${roomCode} remaining=${r.game.timer}`);
+
     io.to(roomCode).emit('timerUpdated', { timer: r.game.timer });
 
     if (r.game.timer <= 0) {
-      clearInterval(timerIntervalId);
-      if (r.game) {
-        r.game.timerIntervalId = null;
-      }
+      clearRoomTimer(roomCode);
       transitionPhase(roomCode, io);
     }
   }, 1000);
 
-  room.game.timerIntervalId = timerIntervalId;
+  roomTimers.set(roomCode, timerIntervalId);
 };
 
 /**
@@ -186,6 +245,8 @@ const transitionPhase = (roomCode, io) => {
     startPhaseTimer(roomCode, io);
   } 
   else if (currentPhase === 'trading') {
+    // Clear all trade timeouts for the room
+    clearAllTradeTimeoutsForRoom(roomCode);
     // Cancel any active trades
     room.game.trades = [];
     // Move to Card Phase
@@ -237,6 +298,8 @@ const transitionPhase = (roomCode, io) => {
       startPhaseTimer(roomCode, io);
     }
   }
+
+  console.log(`[GAME PHASE] room=${roomCode} ${currentPhase.toUpperCase()} -> ${room.gameState.toUpperCase()}`);
 };
 
 /**
@@ -286,7 +349,7 @@ export const createTradeRequest = (roomCode, senderId, receiverId, io) => {
 
   // Set a 12-second timeout to auto-expire the trade request
   const tradeId = trade.id;
-  setTimeout(() => {
+  const timeoutId = setTimeout(() => {
     const currentRoom = rooms.get(roomCode.toUpperCase().trim());
     if (currentRoom && currentRoom.game) {
       const pendingIndex = currentRoom.game.trades.findIndex(
@@ -298,12 +361,34 @@ export const createTradeRequest = (roomCode, senderId, receiverId, io) => {
         
         // Emit state updates to sync frontend clocks/views
         io.to(currentRoom.roomCode).emit('roomUpdated', currentRoom);
+        
+        // Find sender and receiver to notify them of expiration
+        const sender = currentRoom.players.find((p) => p.id === senderId);
+        const receiver = currentRoom.players.find((p) => p.id === receiverId);
+        
+        if (sender && sender.socketId) {
+          io.to(sender.socketId).emit('tradeExpired');
+        }
         if (receiver && receiver.socketId) {
-          io.to(receiver.socketId).emit('tradeCancelled', { playerId: senderId });
+          io.to(receiver.socketId).emit('tradeExpired');
         }
       }
     }
+    tradeTimeouts.delete(tradeId);
+    const roomCodeUpper = roomCode.toUpperCase().trim();
+    const tradeSet = roomTradeTimeouts.get(roomCodeUpper);
+    if (tradeSet) {
+      tradeSet.delete(tradeId);
+      if (tradeSet.size === 0) roomTradeTimeouts.delete(roomCodeUpper);
+    }
   }, 12000);
+
+  tradeTimeouts.set(tradeId, timeoutId);
+  const roomCodeUpper = roomCode.toUpperCase().trim();
+  if (!roomTradeTimeouts.has(roomCodeUpper)) {
+    roomTradeTimeouts.set(roomCodeUpper, new Set());
+  }
+  roomTradeTimeouts.get(roomCodeUpper).add(tradeId);
 
   return { room, trade, receiverSocketId: receiver.socketId };
 };
@@ -338,7 +423,23 @@ export const acceptTradeRequest = (roomCode, tradeId, receiverId) => {
     timestamp: Date.now(),
   });
 
-  // Automatically cancel all other pending trades involving either player
+  // Clear accepted trade timeout
+  clearTradeTimeout(tradeId);
+
+  // Automatically cancel all other pending trades involving either player, and clear their timeouts
+  room.game.trades.forEach((t) => {
+    if (
+      t.id !== tradeId &&
+      t.status === 'pending' &&
+      (t.senderId === trade.senderId ||
+        t.receiverId === trade.senderId ||
+        t.senderId === trade.receiverId ||
+        t.receiverId === trade.receiverId)
+    ) {
+      clearTradeTimeout(t.id);
+    }
+  });
+
   room.game.trades = room.game.trades.filter(
     (t) =>
       t.id === tradeId ||
@@ -366,6 +467,10 @@ export const rejectTradeRequest = (roomCode, tradeId, receiverId) => {
   if (trade.receiverId !== receiverId) throw new Error('Unauthorized.');
 
   trade.status = 'rejected';
+
+  // Clear trade timeout
+  clearTradeTimeout(tradeId);
+
   // Remove from trades list
   room.game.trades = room.game.trades.filter((t) => t.id !== tradeId);
 
@@ -384,6 +489,9 @@ export const cancelTradeRequest = (roomCode, playerId) => {
     (t) => t.senderId === playerId && t.status === 'pending'
   );
   if (!pendingTrade) throw new Error('No pending trade request found to cancel.');
+
+  // Clear trade timeout
+  clearTradeTimeout(pendingTrade.id);
 
   room.game.trades = room.game.trades.filter((t) => t.id !== pendingTrade.id);
   
@@ -620,10 +728,9 @@ export const resetToLobby = (roomCode) => {
   const room = rooms.get(roomCode.toUpperCase().trim());
   if (!room) throw new Error('Room not found');
 
-  // Clear timer
-  if (room.game && room.game.timerIntervalId) {
-    clearInterval(room.game.timerIntervalId);
-  }
+  // Clear timer and trade timeouts
+  clearRoomTimer(room.roomCode);
+  clearAllTradeTimeoutsForRoom(room.roomCode);
 
   room.gameState = 'waiting';
   room.game = null;
