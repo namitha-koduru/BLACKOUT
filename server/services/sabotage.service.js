@@ -115,6 +115,7 @@ export const useSabotage = (room, playerId, sabotageType, targetId, io) => {
     }
   } else if (sabotageType === 'communications') {
     expiresAt = now + 20000; // 20s
+    room.game.communicationsDisabled = true;
     room.game.sabotages.communicationsDisabled = true;
     room.game.sabotages.communicationsDisabledExpiresAt = expiresAt;
 
@@ -127,6 +128,7 @@ export const useSabotage = (room, playerId, sabotageType, targetId, io) => {
     createEvidence(room, 'SABOTAGE_TRACE', 'COMMUNICATIONS', playerId, 'comms', `Communications mainframe hijacked. Jammer device deployed by: ${playerId}.`, 'HIGH', playerId);
   } else if (sabotageType === 'security') {
     expiresAt = now + 25000; // 25s
+    room.game.securityDegraded = true;
     room.game.sabotages.securityDegraded = true;
     room.game.sabotages.securityDegradedExpiresAt = expiresAt;
 
@@ -150,6 +152,7 @@ export const useSabotage = (room, playerId, sabotageType, targetId, io) => {
     createEvidence(room, 'SABOTAGE_TRACE', targetId, playerId, targetId, `Doorway corridor ${targetId} locked down manually. Overridden by: ${playerId}.`, 'HIGH', playerId);
   } else if (sabotageType === 'power_blackout') {
     expiresAt = now + 15000; // 15s
+    room.game.blackoutActive = true;
     room.game.sabotages.blackoutActive = true;
     room.game.sabotages.blackoutActiveExpiresAt = expiresAt;
 

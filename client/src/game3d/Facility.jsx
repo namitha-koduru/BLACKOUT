@@ -249,6 +249,18 @@ const Facility = ({ lockedDoors }) => {
                 decay={1.5}
               />
             )}
+
+            {/* ROOM DECORATIVE FURNITURE / OBSTACLES */}
+            {area.type === 'room' && (
+              <RoomObjects
+                roomName={area.name}
+                cenX={cenX}
+                cenZ={cenZ}
+                width3D={width3D}
+                depth3D={depth3D}
+                roomColor={area.color}
+              />
+            )}
           </group>
         );
       })}
@@ -282,6 +294,154 @@ const Facility = ({ lockedDoors }) => {
       })}
     </group>
   );
+};
+
+// Room Objects & Furniture Decoration Component
+const RoomObjects = ({ roomName, cenX, cenZ, width3D, depth3D, roomColor }) => {
+  switch (roomName) {
+    case 'GENERATOR':
+      return (
+        <group>
+          {/* Reactor Coils / Large Capacitors */}
+          <mesh position={[cenX - width3D / 3, 0.9, cenZ - depth3D / 4]} castShadow>
+            <cylinderGeometry args={[0.5, 0.5, 1.8, 16]} />
+            <meshStandardMaterial color="#475569" metalness={0.7} roughness={0.3} />
+          </mesh>
+          <mesh position={[cenX - width3D / 3, 0.9, cenZ - depth3D / 4]}>
+            <torusGeometry args={[0.55, 0.05, 8, 16]} />
+            <meshBasicMaterial color="#f59e0b" />
+          </mesh>
+
+          <mesh position={[cenX + width3D / 3, 0.9, cenZ + depth3D / 4]} castShadow>
+            <cylinderGeometry args={[0.5, 0.5, 1.8, 16]} />
+            <meshStandardMaterial color="#475569" metalness={0.7} roughness={0.3} />
+          </mesh>
+          <mesh position={[cenX + width3D / 3, 0.9, cenZ + depth3D / 4]}>
+            <torusGeometry args={[0.55, 0.05, 8, 16]} />
+            <meshBasicMaterial color="#f59e0b" />
+          </mesh>
+        </group>
+      );
+    case 'LAB':
+      return (
+        <group>
+          {/* Containment Pods */}
+          <mesh position={[cenX - width3D / 3, 1.1, cenZ + depth3D / 4]} castShadow>
+            <cylinderGeometry args={[0.4, 0.4, 2.2, 16]} />
+            <meshStandardMaterial color="#8b5cf6" transparent opacity={0.3} roughness={0.1} />
+          </mesh>
+          <mesh position={[cenX - width3D / 3, 2.25, cenZ + depth3D / 4]}>
+            <cylinderGeometry args={[0.42, 0.42, 0.1, 16]} />
+            <meshStandardMaterial color="#273449" metalness={0.8} />
+          </mesh>
+          <mesh position={[cenX - width3D / 3, 0.05, cenZ + depth3D / 4]}>
+            <cylinderGeometry args={[0.42, 0.42, 0.1, 16]} />
+            <meshStandardMaterial color="#273449" metalness={0.8} />
+          </mesh>
+
+          <mesh position={[cenX + width3D / 3, 1.1, cenZ - depth3D / 4]} castShadow>
+            <cylinderGeometry args={[0.4, 0.4, 2.2, 16]} />
+            <meshStandardMaterial color="#8b5cf6" transparent opacity={0.3} roughness={0.1} />
+          </mesh>
+          <mesh position={[cenX + width3D / 3, 2.25, cenZ - depth3D / 4]}>
+            <cylinderGeometry args={[0.42, 0.42, 0.1, 16]} />
+            <meshStandardMaterial color="#273449" metalness={0.8} />
+          </mesh>
+          <mesh position={[cenX + width3D / 3, 0.05, cenZ - depth3D / 4]}>
+            <cylinderGeometry args={[0.42, 0.42, 0.1, 16]} />
+            <meshStandardMaterial color="#273449" metalness={0.8} />
+          </mesh>
+        </group>
+      );
+    case 'SECURITY':
+      return (
+        <group>
+          {/* Mainframe Server Racks */}
+          <mesh position={[cenX - width3D / 3, 1.0, cenZ - depth3D / 3]} castShadow>
+            <boxGeometry args={[0.6, 2.0, 1.2]} />
+            <meshStandardMaterial color="#0f172a" metalness={0.8} roughness={0.2} />
+          </mesh>
+          <mesh position={[cenX - width3D / 3 + 0.31, 1.0, cenZ - depth3D / 3]}>
+            <boxGeometry args={[0.02, 1.8, 1.0]} />
+            <meshStandardMaterial color="#3b82f6" emissive="#3b82f6" emissiveIntensity={0.8} />
+          </mesh>
+
+          <mesh position={[cenX - width3D / 3, 1.0, cenZ + depth3D / 3]} castShadow>
+            <boxGeometry args={[0.6, 2.0, 1.2]} />
+            <meshStandardMaterial color="#0f172a" metalness={0.8} roughness={0.2} />
+          </mesh>
+          <mesh position={[cenX - width3D / 3 + 0.31, 1.0, cenZ + depth3D / 3]}>
+            <boxGeometry args={[0.02, 1.8, 1.0]} />
+            <meshStandardMaterial color="#3b82f6" emissive="#3b82f6" emissiveIntensity={0.8} />
+          </mesh>
+        </group>
+      );
+    case 'MEDICAL':
+      return (
+        <group>
+          {/* Treatment Beds */}
+          <mesh position={[cenX - width3D / 4, 0.35, cenZ - depth3D / 4]} castShadow>
+            <boxGeometry args={[0.7, 0.7, 1.4]} />
+            <meshStandardMaterial color="#cbd5e1" roughness={0.5} />
+          </mesh>
+          <mesh position={[cenX - width3D / 4, 0.75, cenZ - depth3D / 4]}>
+            <boxGeometry args={[0.6, 0.1, 1.2]} />
+            <meshStandardMaterial color="#22c55e" roughness={0.8} />
+          </mesh>
+
+          <mesh position={[cenX + width3D / 4, 0.35, cenZ + depth3D / 4]} castShadow>
+            <boxGeometry args={[0.7, 0.7, 1.4]} />
+            <meshStandardMaterial color="#cbd5e1" roughness={0.5} />
+          </mesh>
+          <mesh position={[cenX + width3D / 4, 0.75, cenZ + depth3D / 4]}>
+            <boxGeometry args={[0.6, 0.1, 1.2]} />
+            <meshStandardMaterial color="#22c55e" roughness={0.8} />
+          </mesh>
+        </group>
+      );
+    case 'STORAGE':
+      return (
+        <group>
+          {/* Cargo Crates */}
+          <mesh position={[cenX - width3D / 3, 0.45, cenZ - depth3D / 4]} castShadow>
+            <boxGeometry args={[0.9, 0.9, 0.9]} />
+            <meshStandardMaterial color="#d97706" metalness={0.1} roughness={0.9} />
+          </mesh>
+          <mesh position={[cenX - width3D / 3 + 0.3, 0.35, cenZ + depth3D / 4]} castShadow>
+            <boxGeometry args={[0.7, 0.7, 0.7]} />
+            <meshStandardMaterial color="#78350f" metalness={0.1} roughness={0.9} />
+          </mesh>
+          <mesh position={[cenX + width3D / 3, 0.5, cenZ]} castShadow>
+            <boxGeometry args={[1.0, 1.0, 1.0]} />
+            <meshStandardMaterial color="#92400e" metalness={0.1} roughness={0.9} />
+          </mesh>
+        </group>
+      );
+    case 'CENTRAL HUB':
+      return (
+        <group>
+          {/* Columns in Hub Corners */}
+          <mesh position={[cenX - width3D / 2.3, 2.75, cenZ - depth3D / 2.3]} castShadow>
+            <cylinderGeometry args={[0.3, 0.3, 5.5, 16]} />
+            <meshStandardMaterial color="#273449" metalness={0.8} />
+          </mesh>
+          <mesh position={[cenX - width3D / 2.3, 2.75, cenZ + depth3D / 2.3]} castShadow>
+            <cylinderGeometry args={[0.3, 0.3, 5.5, 16]} />
+            <meshStandardMaterial color="#273449" metalness={0.8} />
+          </mesh>
+          <mesh position={[cenX + width3D / 2.3, 2.75, cenZ - depth3D / 2.3]} castShadow>
+            <cylinderGeometry args={[0.3, 0.3, 5.5, 16]} />
+            <meshStandardMaterial color="#273449" metalness={0.8} />
+          </mesh>
+          <mesh position={[cenX + width3D / 2.3, 2.75, cenZ + depth3D / 2.3]} castShadow>
+            <cylinderGeometry args={[0.3, 0.3, 5.5, 16]} />
+            <meshStandardMaterial color="#273449" metalness={0.8} />
+          </mesh>
+        </group>
+      );
+    default:
+      return null;
+  }
 };
 
 export default Facility;
