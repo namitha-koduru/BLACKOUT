@@ -5,16 +5,20 @@ const InteractionPrompt = ({ label, actionName }) => {
   if (!label) return null;
 
   return (
-    <div className="flex flex-col items-center justify-center gap-1 bg-slate-950/85 border border-cyan-500/35 rounded-xl px-5 py-3 shadow-[0_0_20px_rgba(6,182,212,0.15)] animate-bounce font-mono">
-      <div className="text-[10px] text-cyan-400 font-extrabold uppercase tracking-wider">
-        Console Proximity Detected
+    <div className="flex flex-col w-56 bg-[#172235]/95 border-2 border-[#22d3ee]/60 rounded-xl px-4 py-3 shadow-lg shadow-cyan-950/40 animate-bounce font-mono text-left select-none">
+      {/* HEADER ROW WITH ICON */}
+      <div className="flex items-center gap-1.5 text-[9px] text-[#22d3ee] font-black uppercase tracking-widest border-b border-[#22d3ee]/15 pb-1 mb-2">
+        <span>⚡</span>
+        <span>{label}</span>
       </div>
-      <div className="text-white text-xs font-black flex items-center gap-2">
-        <span className="bg-cyan-500 text-slate-950 font-black px-1.5 py-0.5 rounded text-[10px] border border-cyan-400 shadow-sm animate-pulse">
+      
+      {/* KEYBOARD ACTION BUTTON DISPLAY */}
+      <div className="flex items-center justify-center gap-3 mt-1 py-1">
+        <span className="bg-gradient-to-r from-[#22d3ee] to-[#3b82f6] text-white font-extrabold px-2.5 py-1 rounded-md text-[11px] border border-[#22d3ee]/40 shadow shadow-cyan-400/20 animate-pulse select-none">
           E
         </span>
-        <span className="uppercase text-slate-200">
-          {actionName} {label}
+        <span className="text-[10px] text-[#f8fafc] font-black uppercase tracking-widest">
+          {actionName}
         </span>
       </div>
     </div>

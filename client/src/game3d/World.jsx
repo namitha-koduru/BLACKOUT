@@ -18,7 +18,8 @@ const World = ({ posX, posY, activeRepairSession, nearSystem, nearTerminal, onIn
   if (!room || !room.game) return null;
 
   // Sync door lockdown states
-  const lockedDoors = room.game.sabotages?.lockedDoors || [];
+  const lockedDoors = Object.keys(room.game?.sabotages?.lockedDoors || {})
+    .filter((k) => room.game.sabotages.lockedDoors[k] > Date.now());
 
   return (
     <>
@@ -26,7 +27,7 @@ const World = ({ posX, posY, activeRepairSession, nearSystem, nearTerminal, onIn
       <Lighting settings={settings} />
 
       {/* SUBTLE FACILITY FOG */}
-      {settings.effects && <fogExp2 attach="fog" color="#030407" density={0.035} />}
+      {settings.effects && <fogExp2 attach="fog" color="#101827" density={0.035} />}
 
       {/* 3D FACILITY LAYOUT (FLOORS, WALLS, DOORS, SYSTEMS) */}
       <Facility lockedDoors={lockedDoors} />
@@ -49,7 +50,7 @@ const World = ({ posX, posY, activeRepairSession, nearSystem, nearTerminal, onIn
             targetX={pos.x * SCALE}
             targetZ={pos.y * SCALE}
             isDisconnected={!pos.connected}
-            isAlive={room.game.players[pId]?.isAlive !== false}
+            isAlive={room.game?.players?.[pId]?.isAlive !== false}
             playerIdx={playerIdx}
           />
         );
@@ -58,7 +59,7 @@ const World = ({ posX, posY, activeRepairSession, nearSystem, nearTerminal, onIn
       {/* LOCAL CONTROLLABLE PLAYER */}
       {(() => {
         const myData = room.players.find((p) => p.id === playerId);
-        const myGameData = room.game.players[playerId];
+        const myGameData = room.game?.players?.[playerId];
         if (!myData) return null;
 
         const playerIdx = room.players.findIndex((p) => p.id === playerId);

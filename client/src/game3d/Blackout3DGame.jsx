@@ -57,12 +57,56 @@ const isValidPosition = (x, y) => {
   );
 };
 
+// React Error Boundary for Three.js/WebGL Failures
+class ThreeErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("WebGL 3D Context Crash caught:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#101827] text-center font-mono p-6">
+          <div className="text-3xl text-red-500 animate-pulse">⚠️</div>
+          <h2 className="text-sm font-black text-red-400 uppercase tracking-widest">FACILITY INITIALIZATION ERROR</h2>
+          <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
+            Something went wrong while loading the 3D facility. WebGL graphics context or rendering engine crashed.
+          </p>
+          <div className="flex gap-3 mt-4">
+            <button
+              onClick={() => window.location.reload()}
+              className="btn-primary"
+            >
+              Retry Link
+            </button>
+            <button
+              onClick={this.props.onReturn}
+              className="px-4 py-2.5 bg-[#22304a] hover:bg-[#2d3e5e] text-white rounded-xl text-xs font-bold transition-all uppercase"
+            >
+              Return to Lobby
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const Blackout3DGame = () => {
   const playerId = useUserStore((state) => state.playerId);
   const room = useRoomStore((state) => state.room);
   const timer = useRoomStore((state) => state.timer);
   const myRoleInfo = useRoomStore((state) => state.myRoleInfo);
-  const playAgain = useRoomStore((state) => state.playAgain);
   const returnToLobby = useRoomStore((state) => state.returnToLobby);
   const sendChatMessage = useRoomStore((state) => state.sendChatMessage);
   const sendPlayerMove = useRoomStore((state) => state.sendPlayerMove);
@@ -84,12 +128,13 @@ const Blackout3DGame = () => {
   const lastEmitTime = useRef(0);
   const wasMoving = useRef(false);
 
-  // Focus and trigger state managers
+  // Focus managers
   const [nearSystem, setNearSystem] = useState(null);
   const [nearTerminal, setNearTerminal] = useState(null);
   const [activeRepairSession, setActiveRepairSession] = useState(null);
   const [sabPanelOpen, setSabPanelOpen] = useState(false);
   const [investigateOpen, setInvestigateOpen] = useState(false);
+  const [webGLAvailable, setWebGLAvailable] = useState(true);
 
   // UI settings
   const [graphicsSettings, setGraphicsSettings] = useState({
@@ -98,12 +143,25 @@ const Blackout3DGame = () => {
     particles: true
   });
 
-  const isHost = room.hostId === playerId;
-  const currentPhase = room.game?.phase || 'countdown';
+  const isHost = room?.hostId === playerId;
+  const currentPhase = room?.game?.phase || 'countdown';
   const myPlayerAlive = room?.game?.players?.[playerId]?.isAlive === true;
   const myRoleName = myRoleInfo?.role || 'Crew';
   const myTeamName = myRoleInfo?.team || 'crew';
   const isSaboteurTeam = myTeamName.toLowerCase() === 'saboteur';
+
+  // Check WebGL availability
+  useEffect(() => {
+    const checkWebGL = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+      } catch (e) {
+        return false;
+      }
+    };
+    setWebGLAvailable(checkWebGL());
+  }, []);
 
   // Handle spawn position update on game start
   useEffect(() => {
@@ -127,7 +185,6 @@ const Blackout3DGame = () => {
   // Keyboard Event bindings
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Ignore if typing in chat
       if (document.activeElement.tagName === 'INPUT') return;
 
       const key = e.key.toLowerCase();
@@ -204,7 +261,6 @@ const Blackout3DGame = () => {
       let dx = 0;
       let dy = 0;
 
-      // Allow movement only during exploration, if alive, and not currently repairing
       if (currentPhase === 'exploration' && myPlayerAlive && !activeRepairSession) {
         if (activeKeys.current['w'] || activeKeys.current['arrowup']) dy -= 1;
         if (activeKeys.current['s'] || activeKeys.current['arrowdown']) dy += 1;
@@ -222,7 +278,6 @@ const Blackout3DGame = () => {
         const nextX = Math.round(posX + dx * speed * delta);
         const nextY = Math.round(posY + dy * speed * delta);
 
-        // Lockdown corridor block check
         let isLockedDoor = false;
         const targetArea = WALKABLE_AREAS.find(
           (area) => nextX >= area.x && nextX <= area.x + area.w && nextY >= area.y && nextY <= area.y + area.h
@@ -239,12 +294,10 @@ const Blackout3DGame = () => {
           setPosY(nextY);
           wasMoving.current = true;
 
-          // Track room changes
           if (targetArea && targetArea.type === 'room' && targetArea.name !== currentRoom) {
             setCurrentRoom(targetArea.name);
           }
 
-          // Throttle socket sync signals to 20Hz (50ms interval)
           const now = Date.now();
           if (now - lastEmitTime.current >= 50) {
             sendPlayerMove(room.roomCode, playerId, nextX, nextY);
@@ -256,7 +309,6 @@ const Blackout3DGame = () => {
         sendPlayerStopped(room.roomCode, playerId, posX, posY);
       }
 
-      // Check proximity to system consoles
       let nearestSys = null;
       let nearestTerm = null;
       let minDistance = 90;
@@ -304,9 +356,35 @@ const Blackout3DGame = () => {
     returnToLobby(room.roomCode, playerId);
   };
 
+  // Safe checks for rendering
+  if (!room || !room.game) {
+    return (
+      <div className="flex min-h-screen items-center justify-center font-mono text-xs uppercase tracking-widest text-[#22d3ee] bg-[#101827]">
+        <span className="animate-pulse">Accessing facility mainframe...</span>
+      </div>
+    );
+  }
+
+  if (!webGLAvailable) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#101827] text-center font-mono p-6">
+        <div className="text-3xl text-red-500 animate-pulse">⚠️</div>
+        <h2 className="text-sm font-black text-red-400 uppercase tracking-widest">3D GRAPHICS UNAVAILABLE</h2>
+        <p className="text-xs text-[#cbd5e1] max-w-sm leading-relaxed">
+          Your browser or device cannot initialize the WebGL 3D facility stage. Please enable hardware acceleration.
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          className="btn-primary"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
   const isBlackoutActive = room.game?.blackoutActive === true;
 
-  // Map mini-game type parameters
   const renderMiniGame = () => {
     if (!activeRepairSession) return null;
     const gType = activeRepairSession.gameType;
@@ -328,20 +406,22 @@ const Blackout3DGame = () => {
   };
 
   return (
-    <div className="relative h-screen w-screen bg-[#030408] overflow-hidden select-none font-mono">
+    <div className="relative h-screen w-screen bg-[#101827] overflow-hidden select-none font-mono">
       
       {/* 3D CANVAS PORTAL */}
       <div className="absolute inset-0 z-0">
-        <Canvas camera={{ fov: 45, position: [0, 5, 8] }} shadows>
-          <World
-            posX={posX}
-            posY={posY}
-            activeRepairSession={activeRepairSession}
-            nearSystem={nearSystem}
-            nearTerminal={nearTerminal}
-            settings={graphicsSettings}
-          />
-        </Canvas>
+        <ThreeErrorBoundary onReturn={handleReturnToLobby}>
+          <Canvas camera={{ fov: 45, position: [0, 5, 8] }} shadows>
+            <World
+              posX={posX}
+              posY={posY}
+              activeRepairSession={activeRepairSession}
+              nearSystem={nearSystem}
+              nearTerminal={nearTerminal}
+              settings={graphicsSettings}
+            />
+          </Canvas>
+        </ThreeErrorBoundary>
       </div>
 
       {/* SCREEN SCANLINES DECORATOR */}
@@ -349,7 +429,7 @@ const Blackout3DGame = () => {
 
       {/* POWER BLACKOUT DARK OVERLAY */}
       {isBlackoutActive && (
-        <div className="absolute inset-0 bg-red-950/20 pointer-events-none mix-blend-color-burn z-10 transition-all duration-1000 animate-pulse" />
+        <div className="absolute inset-0 bg-red-950/40 pointer-events-none mix-blend-color-burn z-10 transition-all duration-1000 animate-pulse" />
       )}
 
       {/* TRANSPARENT HUD OVERLAY PANELS */}
@@ -358,28 +438,28 @@ const Blackout3DGame = () => {
         {/* Top Panel: Header HUD */}
         <div className="flex justify-between items-start w-full">
           {/* Header left */}
-          <div className="bg-slate-950/85 border border-cyan-500/25 p-3 rounded-xl text-left pointer-events-auto flex items-center gap-3">
-            <div className={`w-2 h-2 rounded-full ${isBlackoutActive ? 'bg-red-500 animate-ping' : 'bg-cyan-500'}`} />
+          <div className="bg-[#172235]/90 border border-[#22d3ee]/35 p-3 rounded-xl text-left pointer-events-auto flex items-center gap-3 shadow-md shadow-cyan-950/20">
+            <div className={`w-2.5 h-2.5 rounded-full ${isBlackoutActive ? 'bg-[#ef4444] animate-ping' : 'bg-[#22d3ee]'}`} />
             <div>
-              <div className="text-[10px] text-white font-black tracking-widest uppercase">FACILITY SYSTEM</div>
-              <div className="text-[8px] text-slate-500">SECTOR: {currentRoom}</div>
+              <div className="text-[10px] text-[#f8fafc] font-black tracking-widest uppercase">FACILITY MAIN DIVISION</div>
+              <div className="text-[8px] text-[#cbd5e1]">SECTOR: <span className="text-[#22d3ee] font-bold">{currentRoom}</span></div>
             </div>
             <div className="h-6 w-px bg-white/10" />
             <div>
-              <div className="text-[7px] text-slate-500 uppercase">Phase</div>
-              <div className="text-[9px] text-cyan-400 font-extrabold">{currentPhase.replace('_', ' ')}</div>
+              <div className="text-[7px] text-[#cbd5e1] uppercase">Phase</div>
+              <div className="text-[9px] text-[#22d3ee] font-extrabold">{currentPhase.replace('_', ' ')}</div>
             </div>
             <div className="h-6 w-px bg-white/10" />
             <div>
-              <div className="text-[7px] text-slate-500 uppercase">Time limit</div>
-              <div className="text-[10px] font-black text-amber-500">{String(timer).padStart(2, '0')}s</div>
+              <div className="text-[7px] text-[#cbd5e1] uppercase">Timer</div>
+              <div className="text-[10px] font-black text-[#f59e0b]">{String(timer).padStart(2, '0')}s</div>
             </div>
           </div>
 
           {/* Roster right */}
-          <div className="bg-slate-950/85 border border-white/5 p-3 rounded-xl pointer-events-auto max-h-[140px] overflow-y-auto flex flex-col gap-1 w-44">
-            <div className="text-[8px] text-slate-500 border-b border-white/5 pb-1 mb-1 font-black uppercase text-left">
-              Personnel Link ({room.players.length})
+          <div className="bg-[#172235]/90 border border-[#22304a]/50 p-3 rounded-xl pointer-events-auto max-h-[140px] overflow-y-auto flex flex-col gap-1 w-48 shadow-md">
+            <div className="text-[8px] text-[#94a3b8] border-b border-white/5 pb-1 mb-1 font-black uppercase text-left">
+              Personnel Connected ({room.players.length})
             </div>
             {room.players.map((p) => {
               const pState = room.game?.players?.[p.id];
@@ -388,16 +468,16 @@ const Blackout3DGame = () => {
               
               return (
                 <div key={p.id} className="flex justify-between items-center text-[8px] leading-relaxed">
-                  <span className="text-slate-300 truncate max-w-[70px] text-left">
+                  <span className="text-[#cbd5e1] truncate max-w-[80px] text-left">
                     {p.avatar} {p.name} {isMe && '(You)'}
                   </span>
                   <span>
                     {isDisconnected ? (
-                      <span className="text-red-500 font-bold uppercase text-[7px] animate-pulse">Offline</span>
+                      <span className="text-[#ef4444] font-bold uppercase text-[7px] animate-pulse">Offline</span>
                     ) : pState?.isAlive === false ? (
-                      <span className="text-slate-600 uppercase text-[7px]">☠ Deceased</span>
+                      <span className="text-[#cbd5e1]/40 uppercase text-[7px]">☠ Deceased</span>
                     ) : (
-                      <span className="text-emerald-500 font-bold text-[7px]">Online</span>
+                      <span className="text-[#22c55e] font-bold text-[7px]">Online</span>
                     )}
                   </span>
                 </div>
@@ -422,16 +502,16 @@ const Blackout3DGame = () => {
         <div className="flex justify-between items-end w-full">
           {/* Left panel: Minimap and system health */}
           <div className="flex flex-col gap-2 pointer-events-auto">
-            <div className="bg-slate-950/85 border border-white/5 p-3 rounded-xl w-48 text-left">
-              <div className="text-[8px] text-slate-500 border-b border-white/5 pb-1 mb-1 font-black uppercase">
+            <div className="bg-[#172235]/90 border border-[#22304a]/50 p-3 rounded-xl w-48 text-left shadow-md">
+              <div className="text-[8px] text-[#94a3b8] border-b border-white/5 pb-1 mb-1 font-black uppercase">
                 Systems Diagnostics
               </div>
               {Object.keys(room.game.systems).map((sId) => {
                 const sys = room.game.systems[sId];
                 return (
                   <div key={sId} className="flex justify-between items-center text-[8px] mt-1 leading-relaxed">
-                    <span className="text-slate-400 uppercase">{sId}</span>
-                    <span className={sys.health === 0 ? 'text-red-500 font-black animate-pulse' : sys.health <= 40 ? 'text-amber-500 font-bold' : 'text-cyan-400'}>
+                    <span className="text-[#cbd5e1] uppercase">{sId}</span>
+                    <span className={sys.health === 0 ? 'text-[#ef4444] font-black animate-pulse' : sys.health <= 40 ? 'text-[#f59e0b] font-bold' : 'text-[#22d3ee]'}>
                       {sys.health}%
                     </span>
                   </div>
@@ -442,22 +522,22 @@ const Blackout3DGame = () => {
           </div>
 
           {/* Center chat channel (standard feed) */}
-          <div className="bg-slate-950/85 border border-white/5 rounded-xl w-[280px] h-32 flex flex-col overflow-hidden pointer-events-auto self-end shadow-md">
-            <div className="border-b border-white/5 px-2 py-1.5 text-[8px] text-slate-500 text-left font-black uppercase tracking-widest">
-              Broadcast Signal
+          <div className="bg-[#172235]/90 border border-[#22304a]/50 rounded-xl w-[320px] h-36 flex flex-col overflow-hidden pointer-events-auto self-end shadow-md">
+            <div className="border-b border-white/5 px-2 py-1.5 text-[8px] text-[#94a3b8] text-left font-black uppercase tracking-widest">
+              comms feed
             </div>
-            <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1 max-h-20">
+            <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-1 max-h-24">
               {room.chat.slice(-8).map((msg, i) => {
                 const isSystem = msg.senderId === 'system';
                 const isMe = msg.senderId === playerId;
                 return (
                   <div key={i} className="text-left text-[9px] leading-snug">
                     {!isSystem && (
-                      <span className={`font-bold mr-1 ${isMe ? 'text-cyan-400' : 'text-slate-400'}`}>
+                      <span className={`font-bold mr-1 ${isMe ? 'text-[#22d3ee]' : 'text-[#cbd5e1]'}`}>
                         {msg.senderName}:
                       </span>
                     )}
-                    <span className={isSystem ? 'text-amber-500 italic text-[8px]' : 'text-slate-200'}>
+                    <span className={isSystem ? 'text-[#f59e0b] italic text-[8px]' : 'text-[#f8fafc]'}>
                       {msg.text}
                     </span>
                   </div>
@@ -473,16 +553,16 @@ const Blackout3DGame = () => {
                   e.target.reset();
                 }
               }}
-              className="border-t border-white/5 p-1 flex bg-black/40"
+              className="border-t border-white/5 p-1.5 flex bg-black/40"
             >
               <input
                 name="chatInput"
                 type="text"
                 disabled={room.game.communicationsDisabled}
-                placeholder={room.game.communicationsDisabled ? '📡 NET LOCK' : 'Broadcast...'}
-                className="flex-1 bg-black/50 border border-white/5 px-2 py-1 text-[9px] text-white focus:outline-none focus:border-cyan-500 disabled:text-red-500/40"
+                placeholder={room.game.communicationsDisabled ? '📡 INTERFERENCE LOGGED' : 'Broadcast to sector...'}
+                className="flex-1 bg-black/50 border border-white/5 px-2 py-1 text-[9px] text-[#f8fafc] focus:outline-none focus:border-[#22d3ee] disabled:text-red-500/40"
               />
-              <button type="submit" disabled={room.game.communicationsDisabled} className="bg-cyan-600 hover:bg-cyan-700 px-2 py-1 rounded text-[9px] font-bold text-white disabled:bg-slate-900 disabled:text-slate-600">
+              <button type="submit" disabled={room.game.communicationsDisabled} className="bg-[#22d3ee] hover:bg-cyan-500 text-slate-950 px-3 py-1 rounded text-[9px] font-black uppercase disabled:bg-slate-900 disabled:text-slate-600">
                 Send
               </button>
             </form>
@@ -497,19 +577,19 @@ const Blackout3DGame = () => {
                   onClick={() => {
                     callEmergencyMeeting(room.roomCode, playerId);
                   }}
-                  className="w-full py-2 bg-gradient-to-r from-cyan-600 to-blue-700 border border-cyan-500/20 text-white hover:scale-[1.01] rounded-xl text-[9px] font-black uppercase tracking-wider shadow"
+                  className="w-full py-2 bg-gradient-to-r from-[#22d3ee] to-[#8b5cf6] border border-cyan-500/20 text-white hover:scale-[1.01] rounded-xl text-[9px] font-black uppercase tracking-widest shadow"
                 >
                   📢 Call Meeting
                 </button>
 
-                {/* SABOTAGE BUTTON TRIGGER (For Saboteurs) */}
+                {/* SABOTAGE BUTTON TRIGGER */}
                 {isSaboteurTeam && (
                   <button
                     onClick={() => setSabPanelOpen(!sabPanelOpen)}
                     className={`w-full py-2 rounded-xl text-[9px] font-black uppercase tracking-wider border shadow transition-all ${
                       sabPanelOpen
-                        ? 'bg-red-500 text-slate-950 border-red-400'
-                        : 'bg-red-950/20 border-red-500/20 text-red-400'
+                        ? 'bg-[#ef4444] text-[#f8fafc] border-red-400'
+                        : 'bg-red-950/20 border-red-500/20 text-[#ef4444]'
                     }`}
                   >
                     ⚠️ Sabotage menu
@@ -519,23 +599,23 @@ const Blackout3DGame = () => {
                 {/* INVESTIGATE MODAL BTN */}
                 <button
                   onClick={() => setInvestigateOpen(true)}
-                  className="w-full py-2 bg-slate-950/85 border border-white/10 text-slate-300 hover:bg-slate-900/85 rounded-xl text-[9px] font-black uppercase tracking-wider shadow"
+                  className="w-full py-2 bg-[#22304a] border border-white/10 text-[#cbd5e1] hover:bg-[#2d3e5e] rounded-xl text-[9px] font-black uppercase tracking-wider shadow"
                 >
                   🔍 Query Logs
                 </button>
               </>
             )}
 
-            {/* Graphics controls */}
-            <div className="bg-slate-950/85 border border-white/5 p-2 rounded-xl text-left text-[8px] flex flex-col gap-1.5">
-              <div className="font-black text-slate-500 uppercase border-b border-white/5 pb-1 mb-1">
-                Graphics Quality
+            {/* Graphics quality triggers */}
+            <div className="bg-[#172235]/90 border border-white/5 p-2 rounded-xl text-left text-[8px] flex flex-col gap-1.5">
+              <div className="font-black text-[#94a3b8] uppercase border-b border-white/5 pb-1 mb-1">
+                Visual Options
               </div>
               <div className="flex justify-between">
                 <span>Shadows</span>
                 <button
                   onClick={() => setGraphicsSettings((prev) => ({ ...prev, shadows: !prev.shadows }))}
-                  className={`px-1.5 rounded font-bold ${graphicsSettings.shadows ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800 text-slate-500'}`}
+                  className={`px-1.5 rounded font-bold ${graphicsSettings.shadows ? 'bg-[#22d3ee] text-slate-950' : 'bg-slate-800 text-slate-500'}`}
                 >
                   {graphicsSettings.shadows ? 'ON' : 'OFF'}
                 </button>
@@ -544,7 +624,7 @@ const Blackout3DGame = () => {
                 <span>Effects</span>
                 <button
                   onClick={() => setGraphicsSettings((prev) => ({ ...prev, effects: !prev.effects }))}
-                  className={`px-1.5 rounded font-bold ${graphicsSettings.effects ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800 text-slate-500'}`}
+                  className={`px-1.5 rounded font-bold ${graphicsSettings.effects ? 'bg-[#22d3ee] text-slate-950' : 'bg-slate-800 text-slate-500'}`}
                 >
                   {graphicsSettings.effects ? 'ON' : 'OFF'}
                 </button>
@@ -555,7 +635,7 @@ const Blackout3DGame = () => {
             {isHost && (
               <button
                 onClick={handleReturnToLobby}
-                className="w-full py-2.5 bg-red-950/20 border border-red-500/20 text-red-400 hover:bg-red-950/40 rounded-xl text-[9px] font-bold uppercase tracking-wide"
+                className="w-full py-2 bg-red-950/20 border border-red-500/20 text-[#ef4444] hover:bg-red-950/45 rounded-xl text-[9px] font-bold uppercase tracking-wide"
               >
                 Return to Lobby
               </button>
@@ -565,7 +645,7 @@ const Blackout3DGame = () => {
 
       </div>
 
-      {/* DECISION & OVERLAYS INTERACTION MODALS */}
+      {/* MODALS & OVERLAYS */}
       <AnimatePresence>
         {/* Sabotage panel modal overlay */}
         {sabPanelOpen && isSaboteurTeam && currentPhase === 'exploration' && (
@@ -581,10 +661,10 @@ const Blackout3DGame = () => {
 
         {/* Holographic repair panel mini-game */}
         {activeRepairSession && (
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-center justify-center">
-            <div className="bg-slate-950 border border-cyan-500/30 p-5 rounded-2xl max-w-lg w-full flex flex-col items-center">
-              <h3 className="text-sm font-black text-cyan-400 mb-4 uppercase tracking-widest">
-                Restoring system: {activeRepairSession.systemName}
+          <div className="absolute inset-0 bg-black/75 backdrop-blur-sm z-40 flex items-center justify-center">
+            <div className="bg-[#172235] border border-[#22d3ee]/40 p-5 rounded-2xl max-w-lg w-full flex flex-col items-center shadow-2xl">
+              <h3 className="text-sm font-black text-[#22d3ee] mb-4 uppercase tracking-widest">
+                RESTORATION UNIT: {activeRepairSession.systemName}
               </h3>
               {renderMiniGame()}
             </div>
@@ -593,21 +673,21 @@ const Blackout3DGame = () => {
 
         {/* Role assignments reveals */}
         {currentPhase === 'role_assignment' && (
-          <div className="absolute inset-0 bg-slate-950 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-[#101827] z-50 flex items-center justify-center">
             <RoleReveal timer={timer} roleInfo={myRoleInfo} />
           </div>
         )}
 
         {/* Synchronized Match Countdown overlay */}
         {currentPhase === 'countdown' && (
-          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-[#101827]/85 backdrop-blur-sm z-50 flex items-center justify-center">
             <GameStartCountdown timer={timer} />
           </div>
         )}
 
         {/* Emergency Meeting discussion & voting phases */}
         {room.gameState === 'meeting' && (
-          <div className="absolute inset-0 bg-[#030408]/90 backdrop-blur-md z-40">
+          <div className="absolute inset-0 bg-[#101827]/95 backdrop-blur-md z-40">
             <MeetingScreen />
           </div>
         )}

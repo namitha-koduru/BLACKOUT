@@ -8,7 +8,7 @@ import SettingsModal from '../components/SettingsModal.jsx';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const ACCENT_COLORS = ['#06b6d4', '#f59e0b', '#8b5cf6', '#10b981', '#f1f5f9', '#ec4899', '#3b82f6'];
+const ACCENT_COLORS = ['#22d3ee', '#f59e0b', '#8b5cf6', '#22c55e', '#ec4899', '#3b82f6', '#f43f5e', '#cbd5e1'];
 
 // Central Holographic Console Model
 const CentralHologram = ({ roomCode, playersCount, maxPlayers, readyCount }) => {
@@ -26,35 +26,35 @@ const CentralHologram = ({ roomCode, playersCount, maxPlayers, readyCount }) => 
       {/* BASE CONSOLE UNIT */}
       <mesh position={[0, 0.4, 0]}>
         <cylinderGeometry args={[0.8, 1.0, 0.8, 16]} />
-        <meshStandardMaterial color="#1a202c" metalness={0.8} roughness={0.2} />
+        <meshStandardMaterial color="#273449" metalness={0.8} roughness={0.2} />
       </mesh>
 
       {/* GLOWING EMITTER LAYER */}
       <mesh position={[0, 0.82, 0]}>
         <cylinderGeometry args={[0.7, 0.7, 0.05, 16]} />
-        <meshBasicMaterial color="#06b6d4" />
+        <meshBasicMaterial color="#22d3ee" />
       </mesh>
 
       {/* HOLOGRAPH DECORATIVE RINGS */}
       <group ref={meshRef} position={[0, 1.6, 0]}>
         <mesh>
           <torusGeometry args={[0.5, 0.02, 8, 32]} />
-          <meshBasicMaterial color="#06b6d4" transparent opacity={0.65} />
+          <meshBasicMaterial color="#22d3ee" transparent opacity={0.7} />
         </mesh>
         <mesh rotation={[Math.PI / 2, 0, 0]}>
           <torusGeometry args={[0.4, 0.015, 8, 32]} />
-          <meshBasicMaterial color="#06b6d4" transparent opacity={0.45} />
+          <meshBasicMaterial color="#8b5cf6" transparent opacity={0.6} />
         </mesh>
 
         {/* HOLOGRAPH FLOATING DISPLAY BILLBOARD */}
         <Html position={[0, 0, 0]} center distanceFactor={6}>
-          <div className="flex flex-col items-center justify-center p-3 bg-cyan-950/20 border border-cyan-500/20 rounded-xl text-center select-none backdrop-blur-sm pointer-events-none">
-            <div className="text-[8px] text-cyan-400 font-extrabold uppercase tracking-widest">Facility Code</div>
-            <div className="text-lg font-black text-amber-500 tracking-widest">{roomCode}</div>
-            <div className="text-[7px] text-slate-400 uppercase mt-1">
-              Personnel: {playersCount} / {maxPlayers}
+          <div className="flex flex-col items-center justify-center p-4 bg-[#172235]/95 border-2 border-[#22d3ee]/40 rounded-xl text-center select-none backdrop-blur-md pointer-events-none shadow-lg shadow-cyan-950/40 w-32">
+            <div className="text-[8px] text-[#22d3ee] font-black uppercase tracking-widest">Sector Link</div>
+            <div className="text-lg font-black text-[#f59e0b] tracking-widest">{roomCode}</div>
+            <div className="text-[7.5px] text-[#cbd5e1] uppercase mt-1.5">
+              Roster: <span className="text-[#f8fafc] font-extrabold">{playersCount} / {maxPlayers}</span>
             </div>
-            <div className="text-[7px] text-cyan-400 font-bold mt-0.5 animate-pulse">
+            <div className="text-[7.5px] text-[#22c55e] font-extrabold mt-0.5 animate-pulse">
               Ready: {readyCount} / {playersCount}
             </div>
           </div>
@@ -81,41 +81,52 @@ const LobbyPlayer = ({ name, avatar, isHost, isReady, isMe, idx, count }) => {
     <group position={[x, 0, z]} rotation={[0, rotY, 0]}>
       {/* 3D CHARACTER MODEL */}
       <group position={[0, 0.7, 0]}>
+        {/* SUIT (CAPSULE) - BRIGHT BLUISH GRAY */}
         <mesh castShadow receiveShadow>
           <capsuleGeometry args={[0.22, 0.95, 8, 16]} />
-          <meshStandardMaterial color={isMe ? '#1e293b' : '#334155'} metalness={0.5} roughness={0.4} />
+          <meshStandardMaterial color="#273449" metalness={0.5} roughness={0.4} />
         </mesh>
 
+        {/* BACKPACK */}
         <mesh position={[0, 0.1, -0.18]} castShadow>
           <boxGeometry args={[0.22, 0.55, 0.18]} />
           <meshStandardMaterial color={accentColor} metalness={0.6} roughness={0.3} />
         </mesh>
 
+        {/* VISOR */}
         <mesh position={[0, 0.35, 0.14]}>
           <sphereGeometry args={[0.13, 16, 16]} />
-          <meshStandardMaterial color="#06b6d4" emissive="#06b6d4" emissiveIntensity={0.65} />
+          <meshStandardMaterial color="#22d3ee" emissive="#22d3ee" emissiveIntensity={0.8} />
         </mesh>
+
+        {/* DOWN-LIGHT UNDER CHARACTER */}
+        <pointLight
+          position={[0, -0.65, 0]}
+          color={isReady ? '#22c55e' : '#cbd5e1'}
+          intensity={1.5}
+          distance={2.0}
+        />
       </group>
 
       {/* GLOWING BASE RING INDICATION */}
-      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.3, 0.34, 32]} />
-        <meshBasicMaterial color={isReady ? '#10b981' : '#475569'} side={2} />
+      <mesh position={[0, 0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.3, 0.35, 32]} />
+        <meshBasicMaterial color={isReady ? '#22c55e' : '#475569'} side={2} />
       </mesh>
 
       {/* FLOAT LABELS */}
       <Html position={[0, 1.8, 0]} center distanceFactor={8}>
         <div className="flex flex-col items-center gap-1 select-none pointer-events-none whitespace-nowrap font-mono text-[9px]">
-          <div className="flex items-center gap-1 bg-slate-950/80 border border-white/10 px-2 py-0.5 rounded shadow">
+          <div className="flex items-center gap-1 bg-[#172235]/95 border border-[#22d3ee]/30 px-2 py-0.5 rounded shadow shadow-cyan-950/20">
             <span>{avatar}</span>
             <span className="text-white font-bold">{name}</span>
             {isHost && <span title="Host">👑</span>}
-            {isMe && <span className="bg-white/15 px-1 rounded text-[7px] text-slate-300">You</span>}
+            {isMe && <span className="bg-[#22d3ee]/20 px-1 rounded text-[7px] text-[#22d3ee] font-bold">You</span>}
           </div>
           <div className={`px-1.5 py-0.2 rounded text-[7px] font-black uppercase border ${
             isReady 
-              ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-400' 
-              : 'bg-slate-900/60 border-white/5 text-slate-500'
+              ? 'bg-[#22c55e]/20 border-[#22c55e]/30 text-[#22c55e]' 
+              : 'bg-slate-900/60 border-white/5 text-[#cbd5e1]'
           }`}>
             {isReady ? 'Ready' : 'Not Ready'}
           </div>
@@ -176,25 +187,27 @@ const Lobby3D = () => {
   const readyCount = room.players.filter((p) => p.ready).length;
   const otherPlayers = room.players.filter((p) => p.id !== room.hostId);
   const canStartGame =
-    otherPlayers.length > 0 &&
-    otherPlayers.every((p) => p.ready) &&
-    room.players.length >= 4 &&
+    room.players.length >= 1 &&
     !isStarting;
 
   return (
-    <div className="relative flex h-screen w-screen bg-[#030408] overflow-hidden font-mono select-none">
+    <div className="relative flex h-screen w-screen bg-[#101827] overflow-hidden font-mono select-none">
       {/* 3D CANVAS WAITING STAGE */}
       <div className="absolute inset-0 z-0">
-        <Canvas camera={{ position: [0, 5, 7], fov: 50 }}>
+        <Canvas camera={{ position: [0, 5, 7], fov: 50 }} shadows>
           <ambientLight intensity={0.4} color="#a5f3fc" />
           <directionalLight position={[5, 12, 5]} intensity={0.7} color="#ffffff" castShadow />
-          <fogExp2 attach="fog" color="#030408" density={0.05} />
+          <pointLight position={[0, 2.5, 0]} intensity={1.5} color="#22d3ee" />
+          <fogExp2 attach="fog" color="#101827" density={0.05} />
 
           {/* ROOM FLOOR DISK */}
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
             <cylinderGeometry args={[5, 5, 0.1, 32]} />
-            <meshStandardMaterial color="#0c0f16" roughness={0.7} metalness={0.4} />
+            <meshStandardMaterial color="#1e293b" roughness={0.7} metalness={0.4} />
           </mesh>
+
+          {/* HOLOGRAPHIC GRID OVERLAY ON FLOOR */}
+          <gridHelper args={[10, 16, '#334155', '#334155']} position={[0, 0.01, 0]} />
 
           {/* CENTRAL COMMAND holograph */}
           <CentralHologram
@@ -225,49 +238,64 @@ const Lobby3D = () => {
       {/* OVERLAY INTERFACE PANELS */}
       <div className="absolute inset-0 z-10 flex flex-col justify-between p-4 md:p-6 pointer-events-none">
         {/* Top Header */}
-        <div className="flex justify-between items-start pointer-events-auto">
-          <div className="text-left bg-slate-950/75 border border-cyan-500/25 rounded-xl p-3 shadow-md max-w-sm">
+        <div className="flex justify-between items-start pointer-events-auto w-full">
+          <div className="text-left bg-[#172235]/95 border border-[#22d3ee]/35 rounded-xl p-3 shadow-lg shadow-cyan-950/20 max-w-sm">
             <div className="flex items-center gap-2">
-              <h1 className="text-sm font-black text-white uppercase tracking-widest">DEPLOYMENT ROOM</h1>
-              <span className={`text-[8px] px-2 py-0.5 rounded font-black text-slate-900 ${room.settings.isPublic ? 'bg-cyan-400' : 'bg-white/30'}`}>
+              <h1 className="text-sm font-black text-[#f8fafc] uppercase tracking-widest">DEPLOYMENT SECTOR</h1>
+              <span className={`text-[8px] px-2 py-0.5 rounded font-black text-slate-900 ${room.settings.isPublic ? 'bg-[#22d3ee]' : 'bg-white/30'}`}>
                 {room.settings.isPublic ? 'PUBLIC' : 'PRIVATE'}
               </span>
             </div>
-            <p className="text-[9px] text-slate-500 mt-1">Configure parameters and ready up. Game requires 4+ players.</p>
+            <p className="text-[9px] text-[#cbd5e1] mt-1">Ready up and check parameters. Room link requires 4+ technicians.</p>
           </div>
 
-          {/* Settings Trigger */}
-          <button
-            onClick={() => setShowSettings(true)}
-            className="bg-slate-950/75 border border-white/10 hover:bg-slate-900/75 rounded-xl p-3 text-white transition-all text-xs"
-          >
-            ⚙️ Room Settings
-          </button>
+          <div className="flex gap-2">
+            {/* Room Code Display */}
+            <div className="bg-[#172235]/95 border border-[#22d3ee]/35 rounded-xl p-1.5 px-3 flex items-center gap-2 shadow-lg">
+              <span className="text-[8px] text-[#cbd5e1]">CODE:</span>
+              <span className="text-xs font-black text-[#f59e0b] tracking-wider select-text">{room.roomCode}</span>
+              <button
+                onClick={handleCopyCode}
+                className="p-1 hover:bg-[#22304a] rounded text-[#cbd5e1]"
+                title="Copy Room Code"
+              >
+                📋
+              </button>
+            </div>
+
+            {/* Settings Trigger */}
+            <button
+              onClick={() => setShowSettings(true)}
+              className="bg-[#172235]/95 border border-[#22304a]/50 hover:bg-[#22304a] rounded-xl px-4 py-2 text-white transition-all text-xs font-bold shadow-lg"
+            >
+              ⚙️ Parameters
+            </button>
+          </div>
         </div>
 
         {/* Center Prompt Guidance */}
-        <div className="self-center bg-slate-950/45 text-[8px] text-slate-400 px-3 py-1 rounded-full uppercase tracking-wider">
-          Drag screen to inspect characters
+        <div className="self-center bg-[#172235]/60 text-[8px] text-[#cbd5e1] px-4 py-1 rounded-full uppercase tracking-widest border border-white/5">
+          Drag window screen to rotate characters
         </div>
 
         {/* Bottom Panel (Controls & Chat) */}
         <div className="flex flex-col md:flex-row gap-4 w-full max-w-6xl mx-auto pointer-events-auto items-end">
           {/* Chat Interface */}
-          <div className="w-full md:w-[360px] bg-slate-950/85 border border-cyan-500/20 rounded-xl flex flex-col h-56 overflow-hidden shadow-lg">
-            <div className="border-b border-white/15 px-3 py-2 text-[9px] text-cyan-400 font-extrabold uppercase tracking-widest text-left">
-              ROOM COMMS LOG
+          <div className="w-full md:w-[380px] bg-[#172235]/95 border border-[#22d3ee]/35 rounded-xl flex flex-col h-56 overflow-hidden shadow-lg shadow-cyan-950/20">
+            <div className="border-b border-white/5 px-3 py-2 text-[9px] text-[#22d3ee] font-extrabold uppercase tracking-widest text-left">
+              SECTOR COMMS LOG
             </div>
             <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-1.5">
               {room.chat.length === 0 ? (
-                <div className="text-center text-slate-600 text-[10px] py-12">Lobby link active. Transmit status?</div>
+                <div className="text-center text-[#94a3b8] text-[10px] py-12">Mainframe connection active. Broadcast log status?</div>
               ) : (
                 room.chat.map((msg, i) => {
                   const isSystem = msg.senderId === 'system';
                   const isMe = msg.senderId === playerId;
                   return (
-                    <div key={i} className={`text-left text-[10px] leading-relaxed ${isSystem ? 'text-amber-500 italic text-[9px]' : 'text-slate-300'}`}>
+                    <div key={i} className={`text-left text-[10px] leading-relaxed ${isSystem ? 'text-amber-500 italic text-[9px]' : 'text-[#cbd5e1]'}`}>
                       {!isSystem && (
-                        <span className={`font-bold mr-1 ${isMe ? 'text-cyan-400' : 'text-slate-400'}`}>
+                        <span className={`font-bold mr-1 ${isMe ? 'text-[#22d3ee]' : 'text-[#cbd5e1]'}`}>
                           {msg.senderName}:
                         </span>
                       )}
@@ -278,24 +306,24 @@ const Lobby3D = () => {
               )}
               <div ref={chatEndRef} />
             </div>
-            <form onSubmit={handleSendChat} className="border-t border-white/10 p-1.5 flex gap-1.5 bg-black/30">
+            <form onSubmit={handleSendChat} className="border-t border-white/5 p-1.5 flex gap-1.5 bg-black/40">
               <input
                 type="text"
                 maxLength={80}
-                placeholder="Type transmission..."
+                placeholder="Broadcast log message..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className="flex-1 rounded bg-black/50 border border-white/10 px-2 py-1 text-[10px] text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500"
+                className="flex-1 rounded bg-black/50 border border-white/5 px-2 py-1 text-[10px] text-white placeholder-slate-600 focus:outline-none focus:border-[#22d3ee]"
               />
-              <button type="submit" className="bg-cyan-600 hover:bg-cyan-700 text-white font-bold px-3 py-1 rounded text-[10px] uppercase">
+              <button type="submit" className="bg-[#22d3ee] hover:bg-cyan-500 text-slate-950 font-black px-3.5 py-1 rounded text-[10px] uppercase">
                 Send
               </button>
             </form>
           </div>
 
           {/* Right Action buttons */}
-          <div className="flex-1 flex flex-col gap-2 w-full">
-            {/* Host Controls */}
+          <div className="flex-1 flex flex-col gap-2.5 w-full">
+            {/* Host Controls - Gradient glow */}
             {isHost && (
               <button
                 disabled={!canStartGame}
@@ -304,13 +332,13 @@ const Lobby3D = () => {
                   const ok = await startGame(room.roomCode, playerId);
                   if (!ok) setIsStarting(false);
                 }}
-                className={`w-full py-3.5 rounded-xl font-bold uppercase text-xs tracking-wider border shadow-md transition-all ${
+                className={`w-full py-3.5 rounded-xl font-black uppercase text-xs tracking-widest border transition-all ${
                   canStartGame
-                    ? 'bg-gradient-to-r from-emerald-600 to-teal-700 border-emerald-500/20 text-white hover:scale-[1.01] active:scale-95 shadow-[0_0_15px_rgba(16,185,129,0.25)]'
-                    : 'bg-white/5 border-white/10 text-slate-600 cursor-not-allowed'
+                    ? 'bg-gradient-to-r from-[#22d3ee] to-[#8b5cf6] border-cyan-400/40 text-white hover:scale-[1.01] hover:shadow-[0_0_20px_rgba(34,211,238,0.35)] active:scale-95'
+                    : 'bg-slate-900/50 border-white/5 text-[#94a3b8] cursor-not-allowed opacity-50'
                 }`}
               >
-                {isStarting ? 'STARTING FACILITY...' : 'Start Game (All Ready)'}
+                {isStarting ? 'INITIALIZING FACILITY...' : '[ ⚡ START BLACKOUT ]'}
               </button>
             )}
 
@@ -318,10 +346,10 @@ const Lobby3D = () => {
             {!isHost && (
               <button
                 onClick={handleToggleReady}
-                className={`w-full py-3.5 rounded-xl font-bold uppercase text-xs tracking-wider border shadow-md transition-all ${
+                className={`w-full py-3.5 rounded-xl font-black uppercase text-xs tracking-widest border transition-all ${
                   isReady
-                    ? 'bg-gradient-to-r from-red-600 to-amber-700 border-red-500/20 text-white hover:scale-[1.01] active:scale-95'
-                    : 'bg-gradient-to-r from-cyan-600 to-blue-700 border-cyan-500/20 text-white hover:scale-[1.01] active:scale-95 shadow-[0_0_15px_rgba(6,182,212,0.2)]'
+                    ? 'bg-gradient-to-r from-[#ef4444] to-[#f59e0b] border-red-500/20 text-white hover:scale-[1.01] active:scale-95'
+                    : 'bg-gradient-to-r from-[#22d3ee] to-[#3b82f6] border-cyan-400/20 text-white hover:scale-[1.01] hover:shadow-[0_0_15px_rgba(34,211,238,0.25)] active:scale-95'
                 }`}
               >
                 {isReady ? 'Cancel Deployment' : 'Ready for Deployment'}
@@ -332,18 +360,18 @@ const Lobby3D = () => {
               {isHost && (
                 <button
                   onClick={() => deleteRoom(room.roomCode, playerId)}
-                  className="flex-1 py-2.5 rounded-xl border border-red-500/20 bg-red-950/15 hover:bg-red-950/30 text-red-400 font-bold uppercase text-[10px]"
+                  className="flex-1 py-2.5 rounded-xl border border-red-500/20 bg-red-950/20 hover:bg-red-950/40 text-[#ef4444] font-bold uppercase text-[9px] tracking-wider"
                 >
-                  Delete Room
+                  Delete Sector
                 </button>
               )}
               <button
                 onClick={() => {
                   leaveRoom(room.roomCode, playerId);
                 }}
-                className="flex-1 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 font-bold uppercase text-[10px]"
+                className="flex-1 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-[#cbd5e1] font-bold uppercase text-[9px] tracking-wider"
               >
-                Leave Room
+                Leave Sector
               </button>
             </div>
           </div>

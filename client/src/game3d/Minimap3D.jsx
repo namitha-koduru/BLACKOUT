@@ -31,13 +31,13 @@ const Minimap3D = ({ posX, posY }) => {
   const scaleY = 150 / 1000;
 
   return (
-    <div className="relative w-[200px] h-[170px] bg-slate-950/85 border border-cyan-500/25 rounded-xl p-2 select-none shadow-[0_0_20px_rgba(6,182,212,0.15)] font-mono text-[8px] overflow-hidden">
-      <div className="text-[9px] text-cyan-400 font-black uppercase tracking-wider mb-1.5 border-b border-cyan-500/10 pb-0.5 text-left flex justify-between">
+    <div className="relative w-[200px] h-[170px] bg-[#172235]/90 border border-[#22d3ee]/35 rounded-xl p-2 select-none shadow-md shadow-cyan-950/20 font-mono text-[8px] overflow-hidden">
+      <div className="text-[9px] text-[#22d3ee] font-black uppercase tracking-wider mb-1.5 border-b border-cyan-500/10 pb-0.5 text-left flex justify-between">
         <span>FACILITY MAP</span>
-        {isBlackoutActive && <span className="text-red-500 animate-pulse font-black">L-OFFLINE</span>}
+        {isBlackoutActive && <span className="text-[#ef4444] animate-pulse font-black">L-OFFLINE</span>}
       </div>
 
-      <div className="relative w-[180px] h-[135px] mx-auto bg-black/50 border border-white/5 rounded-lg overflow-hidden">
+      <div className="relative w-[180px] h-[135px] mx-auto bg-[#101827]/60 border border-[#22304a]/60 rounded-lg overflow-hidden">
         {/* ROOM BOUNDS */}
         {MAP_ROOMS.map((r) => {
           // Identify if room has a system console and check its health
@@ -69,10 +69,10 @@ const Minimap3D = ({ posX, posY }) => {
               }}
               className={`absolute border border-white/10 rounded flex flex-col items-center justify-center font-bold tracking-tighter ${
                 systemStatus === 'OFFLINE'
-                  ? 'bg-red-950/20 border-red-500/40 text-red-500 animate-pulse'
+                  ? 'bg-red-950/20 border-[#ef4444]/40 text-[#ef4444] animate-pulse'
                   : systemStatus === 'CRITICAL'
-                  ? 'bg-amber-950/20 border-amber-500/40 text-amber-500'
-                  : 'bg-slate-900/40 text-slate-500'
+                  ? 'bg-amber-950/20 border-[#f59e0b]/40 text-[#f59e0b]'
+                  : 'bg-[#22304a]/40 text-[#cbd5e1]'
               }`}
             >
               <span>{r.name}</span>
