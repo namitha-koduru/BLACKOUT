@@ -8,7 +8,20 @@ import SettingsModal from '../components/SettingsModal.jsx';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const ACCENT_COLORS = ['#22d3ee', '#f59e0b', '#8b5cf6', '#22c55e', '#ec4899', '#3b82f6', '#f43f5e', '#cbd5e1'];
+const ACCENT_COLORS = [
+  '#06b6d4', // Cyan
+  '#f97316', // Orange
+  '#8b5cf6', // Purple
+  '#10b981', // Green
+  '#ec4899', // Pink
+  '#3b82f6', // Blue
+  '#eab308', // Yellow
+  '#84cc16', // Lime
+  '#a855f7', // Violet
+  '#f1f5f9', // White
+  '#14b8a6', // Teal
+  '#f43f5e'  // Rose
+];
 
 // Central Holographic Console Model
 const CentralHologram = ({ roomCode, playersCount, maxPlayers, readyCount }) => {
@@ -81,30 +94,36 @@ const LobbyPlayer = ({ name, avatar, isHost, isReady, isMe, idx, count }) => {
     <group position={[x, 0, z]} rotation={[0, rotY, 0]}>
       {/* 3D CHARACTER MODEL */}
       <group position={[0, 0.7, 0]}>
-        {/* SUIT (CAPSULE) - BRIGHT BLUISH GRAY */}
+        {/* SUIT (CAPSULE) - MAIN ACCENT COLOR */}
         <mesh castShadow receiveShadow>
           <capsuleGeometry args={[0.22, 0.95, 8, 16]} />
-          <meshStandardMaterial color="#273449" metalness={0.5} roughness={0.4} />
+          <meshStandardMaterial color={accentColor} metalness={0.6} roughness={0.2} />
         </mesh>
 
         {/* BACKPACK */}
         <mesh position={[0, 0.1, -0.18]} castShadow>
           <boxGeometry args={[0.22, 0.55, 0.18]} />
-          <meshStandardMaterial color={accentColor} metalness={0.6} roughness={0.3} />
+          <meshStandardMaterial color="#1e293b" metalness={0.7} roughness={0.3} />
         </mesh>
 
         {/* VISOR */}
         <mesh position={[0, 0.35, 0.14]}>
           <sphereGeometry args={[0.13, 16, 16]} />
-          <meshStandardMaterial color="#22d3ee" emissive="#22d3ee" emissiveIntensity={0.8} />
+          <meshStandardMaterial
+            color="#0f172a"
+            emissive="#22d3ee"
+            emissiveIntensity={1.5}
+            roughness={0.1}
+            metalness={0.9}
+          />
         </mesh>
 
         {/* DOWN-LIGHT UNDER CHARACTER */}
         <pointLight
           position={[0, -0.65, 0]}
           color={isReady ? '#22c55e' : '#cbd5e1'}
-          intensity={1.5}
-          distance={2.0}
+          intensity={1.8}
+          distance={2.5}
         />
       </group>
 
@@ -119,7 +138,7 @@ const LobbyPlayer = ({ name, avatar, isHost, isReady, isMe, idx, count }) => {
         <div className="flex flex-col items-center gap-1 select-none pointer-events-none whitespace-nowrap font-mono text-[9px]">
           <div className="flex items-center gap-1 bg-[#172235]/95 border border-[#22d3ee]/30 px-2 py-0.5 rounded shadow shadow-cyan-950/20">
             <span>{avatar}</span>
-            <span className="text-white font-bold">{name}</span>
+            <span style={{ color: accentColor }} className="font-bold">{name}</span>
             {isHost && <span title="Host">👑</span>}
             {isMe && <span className="bg-[#22d3ee]/20 px-1 rounded text-[7px] text-[#22d3ee] font-bold">You</span>}
           </div>

@@ -132,6 +132,12 @@ const Console3D = ({ consoleData, systemState }) => {
 
   return (
     <group position={[cenX, 0, cenZ]}>
+      {/* GLOWING INTERACTION BASE RING */}
+      <mesh position={[0, 0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.65, 0.7, 32]} />
+        <meshBasicMaterial color={indicatorColor} side={THREE.DoubleSide} />
+      </mesh>
+
       {/* BASE PILLAR */}
       <mesh position={[0, 0.55, 0]}>
         <boxGeometry args={[0.6, 1.1, 0.6]} />
@@ -179,19 +185,19 @@ const Facility = ({ lockedDoors }) => {
 
         return (
           <group key={area.name}>
-            {/* WALKABLE FLOOR SLAB (DARK SLATE) */}
+            {/* WALKABLE FLOOR SLAB (DARK SLATE SHINY METAL) */}
             <mesh position={[cenX, -0.05, cenZ]} receiveShadow>
               <boxGeometry args={[width3D, 0.1, depth3D]} />
               <meshStandardMaterial
                 color={area.floorBg}
-                roughness={0.5}
-                metalness={0.4}
+                roughness={0.2}
+                metalness={0.8}
               />
             </mesh>
 
-            {/* GRID LINES PATTERN (Holographic Tech Grid) */}
+            {/* GRID LINES PATTERN (Holographic Room Accent Grid) */}
             <gridHelper
-              args={[Math.max(width3D, depth3D), 12, '#334155', '#334155']}
+              args={[Math.max(width3D, depth3D), 12, area.color || '#334155', area.color || '#334155']}
               position={[cenX, 0.015, cenZ]}
             />
 
@@ -205,38 +211,48 @@ const Facility = ({ lockedDoors }) => {
               />
             </mesh>
 
-            {/* SOLID ROOM WALLS (Graphite Gray) */}
+            {/* SOLID ROOM WALLS (Sleek Graphite Gray Metal) */}
             {/* Left Wall */}
             <mesh position={[cenX - width3D / 2, 2.75, cenZ]}>
               <boxGeometry args={[0.15, 5.5, depth3D]} />
-              <meshStandardMaterial color="#273449" roughness={0.7} metalness={0.3} />
+              <meshStandardMaterial color="#1e293b" roughness={0.3} metalness={0.6} />
             </mesh>
             {/* Right Wall */}
             <mesh position={[cenX + width3D / 2, 2.75, cenZ]}>
               <boxGeometry args={[0.15, 5.5, depth3D]} />
-              <meshStandardMaterial color="#273449" roughness={0.7} metalness={0.3} />
+              <meshStandardMaterial color="#1e293b" roughness={0.3} metalness={0.6} />
             </mesh>
             {/* Front Wall */}
             <mesh position={[cenX, 2.75, cenZ - depth3D / 2]}>
               <boxGeometry args={[width3D, 5.5, 0.15]} />
-              <meshStandardMaterial color="#273449" roughness={0.7} metalness={0.3} />
+              <meshStandardMaterial color="#1e293b" roughness={0.3} metalness={0.6} />
             </mesh>
             {/* Back Wall */}
             <mesh position={[cenX, 2.75, cenZ + depth3D / 2]}>
               <boxGeometry args={[width3D, 5.5, 0.15]} />
-              <meshStandardMaterial color="#273449" roughness={0.7} metalness={0.3} />
+              <meshStandardMaterial color="#1e293b" roughness={0.3} metalness={0.6} />
             </mesh>
 
-            {/* ROOM COLOR LIGHTING ACCENTS ON WALLS (Glowing neon stripe) */}
+            {/* NEON GLOW WALL BORDER TRIMS (Renders on all four room walls) */}
             {area.type === 'room' && (
-              <mesh position={[cenX, 1.8, cenZ + depth3D / 2 - 0.1]}>
-                <boxGeometry args={[width3D * 0.75, 0.06, 0.06]} />
-                <meshStandardMaterial
-                  color={area.color}
-                  emissive={area.color}
-                  emissiveIntensity={1.2}
-                />
-              </mesh>
+              <group>
+                <mesh position={[cenX, 2.2, cenZ + depth3D / 2 - 0.1]}>
+                  <boxGeometry args={[width3D * 0.85, 0.05, 0.05]} />
+                  <meshStandardMaterial color={area.color} emissive={area.color} emissiveIntensity={1.5} />
+                </mesh>
+                <mesh position={[cenX, 2.2, cenZ - depth3D / 2 + 0.1]}>
+                  <boxGeometry args={[width3D * 0.85, 0.05, 0.05]} />
+                  <meshStandardMaterial color={area.color} emissive={area.color} emissiveIntensity={1.5} />
+                </mesh>
+                <mesh position={[cenX - width3D / 2 + 0.1, 2.2, cenZ]} rotation={[0, Math.PI / 2, 0]}>
+                  <boxGeometry args={[depth3D * 0.85, 0.05, 0.05]} />
+                  <meshStandardMaterial color={area.color} emissive={area.color} emissiveIntensity={1.5} />
+                </mesh>
+                <mesh position={[cenX + width3D / 2 - 0.1, 2.2, cenZ]} rotation={[0, Math.PI / 2, 0]}>
+                  <boxGeometry args={[depth3D * 0.85, 0.05, 0.05]} />
+                  <meshStandardMaterial color={area.color} emissive={area.color} emissiveIntensity={1.5} />
+                </mesh>
+              </group>
             )}
 
             {/* ROOM POINT LIGHT SOURCES */}
