@@ -196,7 +196,7 @@ const Facility = ({ lockedDoors }) => {
             />
 
             {/* CEILING SLABS (DARK INDIGO CEILING PANELING) */}
-            <mesh position={[cenX, 3.0, cenZ]} castShadow>
+            <mesh position={[cenX, 5.5, cenZ]} castShadow>
               <boxGeometry args={[width3D, 0.1, depth3D]} />
               <meshStandardMaterial
                 color="#111827"
@@ -207,23 +207,23 @@ const Facility = ({ lockedDoors }) => {
 
             {/* SOLID ROOM WALLS (Graphite Gray) */}
             {/* Left Wall */}
-            <mesh position={[cenX - width3D / 2, 1.5, cenZ]}>
-              <boxGeometry args={[0.15, 3.0, depth3D]} />
+            <mesh position={[cenX - width3D / 2, 2.75, cenZ]}>
+              <boxGeometry args={[0.15, 5.5, depth3D]} />
               <meshStandardMaterial color="#273449" roughness={0.7} metalness={0.3} />
             </mesh>
             {/* Right Wall */}
-            <mesh position={[cenX + width3D / 2, 1.5, cenZ]}>
-              <boxGeometry args={[0.15, 3.0, depth3D]} />
+            <mesh position={[cenX + width3D / 2, 2.75, cenZ]}>
+              <boxGeometry args={[0.15, 5.5, depth3D]} />
               <meshStandardMaterial color="#273449" roughness={0.7} metalness={0.3} />
             </mesh>
             {/* Front Wall */}
-            <mesh position={[cenX, 1.5, cenZ - depth3D / 2]}>
-              <boxGeometry args={[width3D, 3.0, 0.15]} />
+            <mesh position={[cenX, 2.75, cenZ - depth3D / 2]}>
+              <boxGeometry args={[width3D, 5.5, 0.15]} />
               <meshStandardMaterial color="#273449" roughness={0.7} metalness={0.3} />
             </mesh>
             {/* Back Wall */}
-            <mesh position={[cenX, 1.5, cenZ + depth3D / 2]}>
-              <boxGeometry args={[width3D, 3.0, 0.15]} />
+            <mesh position={[cenX, 2.75, cenZ + depth3D / 2]}>
+              <boxGeometry args={[width3D, 5.5, 0.15]} />
               <meshStandardMaterial color="#273449" roughness={0.7} metalness={0.3} />
             </mesh>
 

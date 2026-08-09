@@ -85,7 +85,7 @@ const CameraController = ({ targetX, targetZ, activeRepairSession, nearSystem, n
 
       cameraTarget.set(
         targetX + Math.sin(th) * Math.cos(ph) * rad,
-        Math.max(0.5, Math.sin(ph) * rad), // Prevent camera going below floor level
+        Math.max(0.5, Math.min(4.5, Math.sin(ph) * rad)), // Cap camera height below ceiling level (5.5m)
         targetZ + Math.cos(th) * Math.cos(ph) * rad
       );
     }
@@ -93,13 +93,12 @@ const CameraController = ({ targetX, targetZ, activeRepairSession, nearSystem, n
     // Lerp camera coordinates smoothly to prevent jittering
     camera.position.lerp(cameraTarget, 0.1);
     
-    // Look at target points
-    const currentLook = new THREE.Vector3();
-    camera.getWorldDirection(currentLook);
-    const targetDir = lookTarget.clone().sub(camera.position).normalize();
-    const lerpedDir = currentLook.lerp(targetDir, 0.1);
-    
-    camera.lookAt(camera.position.clone().add(lerpedDir));
+    // Look at target points with a smooth coordinate lerp (avoids gimbal/normalization issues)
+    if (!state.currentLookTarget) {
+      state.currentLookTarget = new THREE.Vector3(targetX, 0.8, targetZ);
+    }
+    state.currentLookTarget.lerp(lookTarget, 0.1);
+    camera.lookAt(state.currentLookTarget);
   });
 
   return null;
