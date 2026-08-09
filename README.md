@@ -43,6 +43,7 @@ No database, authentication, or account registration is required — everything 
 
 ### Client (Frontend)
 - **Vite & React 19**
+- **Three.js & @react-three/fiber & @react-three/drei**: High-performance 3D engine, orbital cameras, and procedural map rendering.
 - **Zustand**: Fast state stores for lobbies and game configurations.
 - **Framer Motion**: Premium glassmorphic animations and slide transitions.
 - **Tailwind CSS**: Dark emergency theme, cyan terminal text, and warning borders.
@@ -71,7 +72,8 @@ blackout/
 ├── client/                # Client Vite project
 │   ├── src/
 │   │   ├── components/    # RoleReveal, RoleCard, GameStartCountdown
-│   │   ├── pages/         # Lobby waiting room, BlackoutGame screen
+│   │   ├── game3d/        # 3D Presentation (Canvas, Facility, Camera, Lighting, Models)
+│   │   ├── pages/         # Lobby router entry, BlackoutGame wrapper, Home
 │   │   ├── store/         # roomStore.js (Zustand)
 │   │   └── App.jsx        # React Router routes
 └── server/                # Server Node.js project
