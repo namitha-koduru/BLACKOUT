@@ -187,7 +187,9 @@ const Lobby3D = () => {
   const readyCount = room.players.filter((p) => p.ready).length;
   const otherPlayers = room.players.filter((p) => p.id !== room.hostId);
   const canStartGame =
-    room.players.length >= 1 &&
+    otherPlayers.length > 0 &&
+    otherPlayers.every((p) => p.ready) &&
+    room.players.length >= 4 &&
     !isStarting;
 
   return (
@@ -213,7 +215,7 @@ const Lobby3D = () => {
           <CentralHologram
             roomCode={room.roomCode}
             playersCount={room.players.length}
-            maxPlayers={room.settings.maxPlayers}
+            maxPlayers={room.settings?.maxPlayers || 10}
             readyCount={readyCount}
           />
 
@@ -242,8 +244,8 @@ const Lobby3D = () => {
           <div className="text-left bg-[#172235]/95 border border-[#22d3ee]/35 rounded-xl p-3 shadow-lg shadow-cyan-950/20 max-w-sm">
             <div className="flex items-center gap-2">
               <h1 className="text-sm font-black text-[#f8fafc] uppercase tracking-widest">DEPLOYMENT SECTOR</h1>
-              <span className={`text-[8px] px-2 py-0.5 rounded font-black text-slate-900 ${room.settings.isPublic ? 'bg-[#22d3ee]' : 'bg-white/30'}`}>
-                {room.settings.isPublic ? 'PUBLIC' : 'PRIVATE'}
+              <span className={`text-[8px] px-2 py-0.5 rounded font-black text-slate-900 ${room.settings?.isPublic ? 'bg-[#22d3ee]' : 'bg-white/30'}`}>
+                {room.settings?.isPublic ? 'PUBLIC' : 'PRIVATE'}
               </span>
             </div>
             <p className="text-[9px] text-[#cbd5e1] mt-1">Ready up and check parameters. Room link requires 4+ technicians.</p>

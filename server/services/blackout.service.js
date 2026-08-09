@@ -612,8 +612,8 @@ export const startGame = (roomCode, io, hostId) => {
   }
 
   // Enforce minimum player count validation
-  if (room.players.length < 1) {
-    throw new Error('At least 1 player is required.');
+  if (room.players.length < 4) {
+    throw new Error('At least 4 players are required.');
   }
 
   // Enforce maximum player count validation

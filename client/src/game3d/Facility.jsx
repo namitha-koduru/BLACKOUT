@@ -1,9 +1,10 @@
 // game3d/Facility.jsx
 import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { SCALE } from './World.jsx';
 import { useRoomStore } from '../store/roomStore.js';
 import * as THREE from 'three';
+
+const SCALE = 0.08; // scale factor to translate 2D coordinate values to 3D meters
 
 // 2D Facility Layout Walkable Rectangles
 const WALKABLE_AREAS = [
