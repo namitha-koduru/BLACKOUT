@@ -477,6 +477,11 @@ const RoomObjects = ({ roomName, cenX, cenZ, width3D, depth3D, roomColor }) => {
             <sphereGeometry args={[0.25, 16, 16]} />
             <meshStandardMaterial color="#22d3ee" emissive="#22d3ee" emissiveIntensity={1.2} transparent opacity={0.6} />
           </mesh>
+          {/* Circular waiting bench around holo globe */}
+          <mesh position={[cenX, 0.2, cenZ]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[2.0, 0.2, 8, 32]} />
+            <meshStandardMaterial color="#1e293b" roughness={0.6} />
+          </mesh>
           {/* Atrium corner plants */}
           <mesh position={[cenX - width3D / 2.3, 0.4, cenZ - depth3D / 2.3]} castShadow>
             <cylinderGeometry args={[0.4, 0.3, 0.8, 12]} />
@@ -517,10 +522,19 @@ const RoomObjects = ({ roomName, cenX, cenZ, width3D, depth3D, roomColor }) => {
             <boxGeometry args={[0.6, 0.45, 0.05]} />
             <meshStandardMaterial color="#0f172a" emissive="#3b82f6" emissiveIntensity={0.8} />
           </mesh>
-          {/* Security Locker Cabinets */}
+          {/* Security locker cabinets grid */}
           <mesh position={[cenX - width3D / 3, 0.9, cenZ + depth3D / 4]} castShadow>
             <boxGeometry args={[0.6, 1.8, 0.6]} />
             <meshStandardMaterial color="#475569" metalness={0.8} roughness={0.3} />
+          </mesh>
+          <mesh position={[cenX + width3D / 3, 0.9, cenZ - depth3D / 4]} castShadow>
+            <boxGeometry args={[0.5, 1.8, 1.0]} />
+            <meshStandardMaterial color="#334155" metalness={0.7} />
+          </mesh>
+          {/* Flashing server beacon */}
+          <mesh position={[cenX + width3D / 3, 1.7, cenZ - depth3D / 4]}>
+            <sphereGeometry args={[0.05, 8, 8]} />
+            <meshBasicMaterial color="#ef4444" />
           </mesh>
         </group>
       );
@@ -537,6 +551,26 @@ const RoomObjects = ({ roomName, cenX, cenZ, width3D, depth3D, roomColor }) => {
             <boxGeometry args={[0.5, 0.35, 0.05]} />
             <meshStandardMaterial color="#020617" emissive="#22d3ee" emissiveIntensity={0.6} />
           </mesh>
+          {/* Office chair 1 */}
+          <group position={[cenX - width3D / 4, 0.45, cenZ - depth3D / 4 + 0.6]}>
+            <mesh position={[0, -0.2, 0]}>
+              <cylinderGeometry args={[0.2, 0.25, 0.05, 12]} />
+              <meshStandardMaterial color="#0f172a" />
+            </mesh>
+            <mesh position={[0, 0, 0]}>
+              <cylinderGeometry args={[0.04, 0.04, 0.4, 8]} />
+              <meshStandardMaterial color="#64748b" metalness={0.8} />
+            </mesh>
+            <mesh position={[0, 0.2, 0]}>
+              <boxGeometry args={[0.5, 0.06, 0.5]} />
+              <meshStandardMaterial color="#1e293b" roughness={0.8} />
+            </mesh>
+            <mesh position={[0, 0.5, -0.22]}>
+              <boxGeometry args={[0.45, 0.5, 0.06]} />
+              <meshStandardMaterial color="#1e293b" roughness={0.8} />
+            </mesh>
+          </group>
+
           <mesh position={[cenX + width3D / 4, 0.45, cenZ + depth3D / 4]} castShadow>
             <boxGeometry args={[1.4, 0.9, 0.8]} />
             <meshStandardMaterial color="#cbd5e1" roughness={0.4} />
@@ -544,6 +578,35 @@ const RoomObjects = ({ roomName, cenX, cenZ, width3D, depth3D, roomColor }) => {
           <mesh position={[cenX + width3D / 4, 1.1, cenZ + depth3D / 4]}>
             <boxGeometry args={[0.5, 0.35, 0.05]} />
             <meshStandardMaterial color="#020617" emissive="#22d3ee" emissiveIntensity={0.6} />
+          </mesh>
+          {/* Office chair 2 */}
+          <group position={[cenX + width3D / 4, 0.45, cenZ + depth3D / 4 - 0.6]}>
+            <mesh position={[0, -0.2, 0]}>
+              <cylinderGeometry args={[0.2, 0.25, 0.05, 12]} />
+              <meshStandardMaterial color="#0f172a" />
+            </mesh>
+            <mesh position={[0, 0, 0]}>
+              <cylinderGeometry args={[0.04, 0.04, 0.4, 8]} />
+              <meshStandardMaterial color="#64748b" metalness={0.8} />
+            </mesh>
+            <mesh position={[0, 0.2, 0]}>
+              <boxGeometry args={[0.5, 0.06, 0.5]} />
+              <meshStandardMaterial color="#1e293b" roughness={0.8} />
+            </mesh>
+            <mesh position={[0, 0.5, 0.22]}>
+              <boxGeometry args={[0.45, 0.5, 0.06]} />
+              <meshStandardMaterial color="#1e293b" roughness={0.8} />
+            </mesh>
+          </group>
+
+          {/* Whiteboard */}
+          <mesh position={[cenX - width3D / 2.1, 1.2, cenZ]} rotation={[0, Math.PI / 2, 0]} castShadow>
+            <boxGeometry args={[1.8, 1.2, 0.05]} />
+            <meshStandardMaterial color="#f8fafc" roughness={0.1} />
+          </mesh>
+          <mesh position={[cenX - width3D / 2.1, 0.5, cenZ]} rotation={[0, Math.PI / 2, 0]}>
+            <boxGeometry args={[1.9, 0.05, 0.1]} />
+            <meshStandardMaterial color="#334155" metalness={0.8} />
           </mesh>
         </group>
       );
@@ -563,6 +626,11 @@ const RoomObjects = ({ roomName, cenX, cenZ, width3D, depth3D, roomColor }) => {
           <mesh position={[cenX, 1.7, cenZ]}>
             <sphereGeometry args={[0.8, 16, 16]} />
             <meshStandardMaterial color="#8b5cf6" emissive="#8b5cf6" emissiveIntensity={1.4} transparent opacity={0.4} wireframe />
+          </mesh>
+          {/* Front wall status screen */}
+          <mesh position={[cenX, 2.0, cenZ - depth3D / 2 + 0.1]} castShadow>
+            <boxGeometry args={[3.2, 1.2, 0.08]} />
+            <meshStandardMaterial color="#020617" emissive="#8b5cf6" emissiveIntensity={0.8} />
           </mesh>
           {/* Operator chairs */}
           <mesh position={[cenX - 1.8, 0.45, cenZ]} castShadow>
@@ -612,6 +680,20 @@ const RoomObjects = ({ roomName, cenX, cenZ, width3D, depth3D, roomColor }) => {
             <boxGeometry args={[0.02, 2.2, 1.0]} />
             <meshStandardMaterial color="#8b5cf6" emissive="#8b5cf6" emissiveIntensity={0.8} />
           </mesh>
+
+          {/* Overhead cable tray */}
+          <mesh position={[cenX, 3.8, cenZ]}>
+            <boxGeometry args={[width3D * 0.9, 0.05, 0.2]} />
+            <meshStandardMaterial color="#475569" metalness={0.9} />
+          </mesh>
+          <mesh position={[cenX - width3D / 3, 2.5, cenZ]}>
+            <cylinderGeometry args={[0.08, 0.08, 2.5, 8]} />
+            <meshStandardMaterial color="#475569" metalness={0.8} />
+          </mesh>
+          <mesh position={[cenX + width3D / 3, 2.5, cenZ]}>
+            <cylinderGeometry args={[0.08, 0.08, 2.5, 8]} />
+            <meshStandardMaterial color="#475569" metalness={0.8} />
+          </mesh>
         </group>
       );
     case 'COMMUNICATIONS ROOM':
@@ -631,6 +713,15 @@ const RoomObjects = ({ roomName, cenX, cenZ, width3D, depth3D, roomColor }) => {
           <mesh position={[cenX - width3D / 3, 1.0, cenZ - depth3D / 3]} castShadow>
             <boxGeometry args={[0.8, 2.0, 0.8]} />
             <meshStandardMaterial color="#1e293b" metalness={0.8} />
+          </mesh>
+          {/* Small indoor transceiver dish */}
+          <mesh position={[cenX + width3D / 3, 1.2, cenZ - depth3D / 4]} rotation={[0, -Math.PI / 4, 0.2]} castShadow>
+            <cylinderGeometry args={[0.5, 0.05, 0.1, 16]} />
+            <meshStandardMaterial color="#64748b" metalness={0.9} />
+          </mesh>
+          <mesh position={[cenX + width3D / 3, 0.6, cenZ - depth3D / 4]}>
+            <cylinderGeometry args={[0.06, 0.06, 1.2, 8]} />
+            <meshStandardMaterial color="#475569" metalness={0.8} />
           </mesh>
         </group>
       );
@@ -661,6 +752,16 @@ const RoomObjects = ({ roomName, cenX, cenZ, width3D, depth3D, roomColor }) => {
             <cylinderGeometry args={[0.1, 0.15, 0.4, 8]} />
             <meshStandardMaterial color="#475569" metalness={0.8} />
           </mesh>
+          {/* Biosafety chemical cabinet */}
+          <mesh position={[cenX - width3D / 3, 1.0, cenZ - depth3D / 3]} castShadow>
+            <boxGeometry args={[0.8, 1.8, 0.8]} />
+            <meshStandardMaterial color="#f1f5f9" metalness={0.7} roughness={0.1} />
+          </mesh>
+          {/* Yellow hazard warning decal */}
+          <mesh position={[cenX - width3D / 3, 1.5, cenZ - depth3D / 3 + 0.41]}>
+            <boxGeometry args={[0.4, 0.2, 0.02]} />
+            <meshStandardMaterial color="#eab308" emissive="#eab308" emissiveIntensity={0.6} />
+          </mesh>
         </group>
       );
     case 'MEDICAL LAB':
@@ -675,6 +776,11 @@ const RoomObjects = ({ roomName, cenX, cenZ, width3D, depth3D, roomColor }) => {
             <boxGeometry args={[0.7, 0.1, 1.4]} />
             <meshStandardMaterial color="#22c55e" roughness={0.8} />
           </mesh>
+          {/* Diagnostic screens next to beds */}
+          <mesh position={[cenX - width3D / 4 - 0.5, 1.2, cenZ - depth3D / 4]} rotation={[0, 0.3, 0]}>
+            <boxGeometry args={[0.35, 0.25, 0.05]} />
+            <meshStandardMaterial color="#0f172a" emissive="#22c55e" emissiveIntensity={0.8} />
+          </mesh>
 
           <mesh position={[cenX + width3D / 4, 0.35, cenZ + depth3D / 4]} castShadow>
             <boxGeometry args={[0.8, 0.7, 1.6]} />
@@ -683,6 +789,10 @@ const RoomObjects = ({ roomName, cenX, cenZ, width3D, depth3D, roomColor }) => {
           <mesh position={[cenX + width3D / 4, 0.75, cenZ + depth3D / 4]}>
             <boxGeometry args={[0.7, 0.1, 1.4]} />
             <meshStandardMaterial color="#22c55e" roughness={0.8} />
+          </mesh>
+          <mesh position={[cenX + width3D / 4 - 0.5, 1.2, cenZ + depth3D / 4]} rotation={[0, 0.3, 0]}>
+            <boxGeometry args={[0.35, 0.25, 0.05]} />
+            <meshStandardMaterial color="#0f172a" emissive="#22c55e" emissiveIntensity={0.8} />
           </mesh>
         </group>
       );
@@ -694,10 +804,28 @@ const RoomObjects = ({ roomName, cenX, cenZ, width3D, depth3D, roomColor }) => {
             <cylinderGeometry args={[0.8, 0.8, 0.8, 16]} />
             <meshStandardMaterial color="#94a3b8" roughness={0.4} />
           </mesh>
+          <mesh position={[cenX - 1.2 - 0.6, 0.2, cenZ - 1.2]} castShadow>
+            <boxGeometry args={[0.3, 0.4, 0.3]} />
+            <meshStandardMaterial color="#475569" />
+          </mesh>
+          <mesh position={[cenX - 1.2 + 0.6, 0.2, cenZ - 1.2]} castShadow>
+            <boxGeometry args={[0.3, 0.4, 0.3]} />
+            <meshStandardMaterial color="#475569" />
+          </mesh>
+
           <mesh position={[cenX + 1.2, 0.4, cenZ + 1.2]} castShadow>
             <cylinderGeometry args={[0.8, 0.8, 0.8, 16]} />
             <meshStandardMaterial color="#94a3b8" roughness={0.4} />
           </mesh>
+          <mesh position={[cenX + 1.2 - 0.6, 0.2, cenZ + 1.2]} castShadow>
+            <boxGeometry args={[0.3, 0.4, 0.3]} />
+            <meshStandardMaterial color="#475569" />
+          </mesh>
+          <mesh position={[cenX + 1.2 + 0.6, 0.2, cenZ + 1.2]} castShadow>
+            <boxGeometry args={[0.3, 0.4, 0.3]} />
+            <meshStandardMaterial color="#475569" />
+          </mesh>
+
           {/* Vending machine */}
           <mesh position={[cenX - width3D / 3, 1.0, cenZ + depth3D / 3]} castShadow>
             <boxGeometry args={[0.8, 2.0, 0.8]} />
@@ -722,6 +850,11 @@ const RoomObjects = ({ roomName, cenX, cenZ, width3D, depth3D, roomColor }) => {
             <boxGeometry args={[1.6, 0.2, 0.32]} />
             <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={1.0} />
           </mesh>
+          {/* Rooftop battery arrays */}
+          <mesh position={[cenX + width3D / 4, 0.6, cenZ + depth3D / 4]} castShadow>
+            <boxGeometry args={[1.0, 1.2, 0.8]} />
+            <meshStandardMaterial color="#334155" metalness={0.7} />
+          </mesh>
         </group>
       );
     case 'ENGINEERING':
@@ -739,6 +872,11 @@ const RoomObjects = ({ roomName, cenX, cenZ, width3D, depth3D, roomColor }) => {
           <mesh position={[cenX + 1.0, 0.9, cenZ + depth3D / 4]} castShadow>
             <boxGeometry args={[1.2, 1.8, 0.6]} />
             <meshStandardMaterial color="#1e293b" metalness={0.8} />
+          </mesh>
+          {/* Steam pipe valve */}
+          <mesh position={[cenX - 1.0, 1.8, cenZ]}>
+            <cylinderGeometry args={[0.08, 0.08, 1.2, 8]} />
+            <meshStandardMaterial color="#94a3b8" metalness={0.9} />
           </mesh>
         </group>
       );
@@ -759,6 +897,15 @@ const RoomObjects = ({ roomName, cenX, cenZ, width3D, depth3D, roomColor }) => {
             <boxGeometry args={[0.8, 2.0, 0.8]} />
             <meshStandardMaterial color="#334155" metalness={0.7} />
           </mesh>
+          {/* Battery canisters on shelves */}
+          <mesh position={[cenX - width3D / 3, 0.35, cenZ + depth3D / 4]} castShadow>
+            <cylinderGeometry args={[0.2, 0.2, 0.6, 12]} />
+            <meshStandardMaterial color="#eab308" metalness={0.8} />
+          </mesh>
+          <mesh position={[cenX - width3D / 3 + 0.3, 0.35, cenZ + depth3D / 4]} castShadow>
+            <cylinderGeometry args={[0.2, 0.2, 0.6, 12]} />
+            <meshStandardMaterial color="#eab308" metalness={0.8} />
+          </mesh>
         </group>
       );
     case 'STORAGE':
@@ -777,6 +924,16 @@ const RoomObjects = ({ roomName, cenX, cenZ, width3D, depth3D, roomColor }) => {
           <mesh position={[cenX + width3D / 4, 1.1, cenZ + depth3D / 4]} castShadow>
             <boxGeometry args={[0.7, 0.7, 0.7]} />
             <meshStandardMaterial color="#78350f" roughness={0.9} />
+          </mesh>
+          {/* Industrial shelves */}
+          <mesh position={[cenX - width3D / 4, 1.0, cenZ + depth3D / 4]} castShadow>
+            <boxGeometry args={[1.2, 2.0, 0.4]} />
+            <meshStandardMaterial color="#475569" metalness={0.8} roughness={0.3} wireframe />
+          </mesh>
+          {/* Crates on shelf */}
+          <mesh position={[cenX - width3D / 4, 0.6, cenZ + depth3D / 4]} castShadow>
+            <boxGeometry args={[0.5, 0.5, 0.4]} />
+            <meshStandardMaterial color="#b45309" roughness={0.9} />
           </mesh>
         </group>
       );
@@ -806,6 +963,11 @@ const RoomObjects = ({ roomName, cenX, cenZ, width3D, depth3D, roomColor }) => {
             <boxGeometry args={[0.08, 1.2, 3.0]} />
             <meshStandardMaterial color="#94a3b8" metalness={0.8} />
           </mesh>
+          {/* Overhead fuel pipelines */}
+          <mesh position={[cenX, 4.2, cenZ]}>
+            <cylinderGeometry args={[0.12, 0.12, width3D * 0.9, 12]} />
+            <meshStandardMaterial color="#334155" metalness={0.8} />
+          </mesh>
         </group>
       );
     case 'REACTOR / POWER CORE':
@@ -826,6 +988,11 @@ const RoomObjects = ({ roomName, cenX, cenZ, width3D, depth3D, roomColor }) => {
             <torusGeometry args={[2.2, 0.16, 8, 24]} />
             <meshStandardMaterial color="#eab308" metalness={0.8} />
           </mesh>
+          {/* Safety caution sign board */}
+          <mesh position={[cenX - 2.0, 1.2, cenZ]} rotation={[0, Math.PI / 2, 0]}>
+            <boxGeometry args={[0.8, 0.5, 0.05]} />
+            <meshStandardMaterial color="#eab308" emissive="#eab308" emissiveIntensity={0.6} />
+          </mesh>
         </group>
       );
     case 'UTILITY ROOM':
@@ -839,6 +1006,15 @@ const RoomObjects = ({ roomName, cenX, cenZ, width3D, depth3D, roomColor }) => {
           <mesh position={[cenX + 0.8, 0.9, cenZ - depth3D / 4]} castShadow>
             <cylinderGeometry args={[0.4, 0.4, 1.8, 12]} />
             <meshStandardMaterial color="#0284c7" metalness={0.8} roughness={0.2} />
+          </mesh>
+          {/* Connecting pipes */}
+          <mesh position={[cenX - 0.8, 0.9, cenZ - depth3D / 4 + 0.4]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.06, 0.06, 0.8, 8]} />
+            <meshStandardMaterial color="#cbd5e1" metalness={0.9} />
+          </mesh>
+          <mesh position={[cenX + 0.8, 0.9, cenZ - depth3D / 4 + 0.4]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.06, 0.06, 0.8, 8]} />
+            <meshStandardMaterial color="#cbd5e1" metalness={0.9} />
           </mesh>
           {/* Large air ventilation boxes */}
           <mesh position={[cenX, 1.2, cenZ + depth3D / 4]} castShadow>

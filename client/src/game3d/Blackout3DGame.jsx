@@ -166,7 +166,12 @@ const Blackout3DGame = () => {
   // Position States
   const [posX, setPosX] = useState(600);
   const [posY, setPosY] = useState(425);
-  const [currentRoom, setCurrentRoom] = useState('CENTRAL HUB');
+  const [currentRoom, setCurrentRoom] = useState('CENTRAL ATRIUM');
+
+  // Level transition alert UI states
+  const [alertRoom, setAlertRoom] = useState('CENTRAL ATRIUM');
+  const [alertLevel, setAlertLevel] = useState(1);
+  const [showLevelAlert, setShowLevelAlert] = useState(false);
 
   // Input states
   const activeKeys = useRef({});
@@ -212,6 +217,29 @@ const Blackout3DGame = () => {
     };
     setWebGLAvailable(checkWebGL());
   }, []);
+
+  // Level alert calculator helper
+  const getRoomLevel = (roomName) => {
+    const lowerRooms = [
+      'ENGINEERING', 'MAINTENANCE', 'STORAGE',
+      'GENERATOR ROOM', 'REACTOR / POWER CORE', 'UTILITY ROOM'
+    ];
+    return lowerRooms.includes(roomName) ? 2 : 1;
+  };
+
+  // Trigger level/sector alert when entering rooms
+  useEffect(() => {
+    if (currentRoom) {
+      const lvl = getRoomLevel(currentRoom);
+      setAlertRoom(currentRoom);
+      setAlertLevel(lvl);
+      setShowLevelAlert(true);
+      const t = setTimeout(() => {
+        setShowLevelAlert(false);
+      }, 2500);
+      return () => clearTimeout(t);
+    }
+  }, [currentRoom]);
 
   // Handle spawn position update on game start
   useEffect(() => {
@@ -603,6 +631,51 @@ const Blackout3DGame = () => {
           </Canvas>
         </ThreeErrorBoundary>
       </div>
+
+      {/* SECTOR / LEVEL TRANSITION ALERT UI */}
+      <AnimatePresence>
+        {showLevelAlert && (
+          <motion.div
+            initial={{ opacity: 0, x: -100, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 100, scale: 0.95 }}
+            transition={{ type: 'spring', damping: 20, stiffness: 100 }}
+            className="absolute top-1/4 left-8 z-30 pointer-events-none flex flex-col gap-1 select-none"
+          >
+            {/* Sci-Fi Warning Header */}
+            <div className="flex items-center gap-2">
+              <div className="h-[2px] w-6 bg-cyan-400 animate-pulse" />
+              <span className="text-[10px] font-black text-cyan-400 tracking-[0.25em] uppercase font-mono animate-pulse">
+                SYSTEM DECK DETECTED
+              </span>
+            </div>
+
+            {/* Main Sector Title Card */}
+            <div className="relative overflow-hidden bg-slate-950/85 border-y-2 border-l-4 border-cyan-400/80 px-6 py-4 backdrop-blur-md shadow-[0_0_30px_rgba(34,211,238,0.2)]">
+              {/* Scanline pattern overlay inside card */}
+              <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.15)_50%)] bg-[length:100%_4px] opacity-25" />
+              {/* Diagonal warning hazard corner */}
+              <div className="absolute top-0 right-0 h-full w-2 bg-[repeating-linear-gradient(-45deg,#22d3ee,#22d3ee_4px,#0f172a_4px,#0f172a_8px)]" />
+
+              <div className="flex flex-col text-left">
+                <span className="text-[11px] text-cyan-500/70 font-mono tracking-widest uppercase">
+                  LEVEL 0{alertLevel} : {alertLevel === 1 ? 'SURFACE DECK' : 'DEEP RESEARCH SUB-LEVEL'}
+                </span>
+                <span className="text-2xl font-black text-white tracking-wide mt-1 uppercase font-mono drop-shadow-[0_2px_8px_rgba(255,255,255,0.25)]">
+                  {alertRoom}
+                </span>
+              </div>
+            </div>
+
+            {/* Status Footer */}
+            <div className="flex items-center gap-3 text-[8px] font-mono text-cyan-500/60 uppercase tracking-widest pl-1 mt-0.5">
+              <span>GPS SYNCED</span>
+              <span>•</span>
+              <span className="text-emerald-400 animate-pulse">ONLINE</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* SCREEN SCANLINES DECORATOR */}
       <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.18)_50%)] bg-[length:100%_4px] z-20 opacity-30"></div>

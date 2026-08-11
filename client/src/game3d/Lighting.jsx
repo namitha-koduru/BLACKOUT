@@ -24,20 +24,20 @@ const Lighting = ({ settings }) => {
 
   // Compute ambient properties
   let ambientColor = '#e2e8f0'; // Cool facility slate
-  let ambientIntensity = 0.55;
+  let ambientIntensity = 1.2;
 
   if (isBlackoutActive) {
     ambientColor = '#1a0505'; // Very dark reddish glow
-    ambientIntensity = 0.08;
+    ambientIntensity = 0.12;
   } else if (isEmergency) {
     ambientColor = '#2d1515'; // Dim red facility hazard
-    ambientIntensity = 0.25;
+    ambientIntensity = 0.45;
   } else if (isCommsOffline) {
     ambientColor = '#102030'; // Cyan/blue static
-    ambientIntensity = 0.4;
+    ambientIntensity = 0.8;
   } else if (isSecurityDegraded) {
     ambientColor = '#2d2515'; // Amber static
-    ambientIntensity = 0.35;
+    ambientIntensity = 0.7;
   }
 
   // Animation ticks for pulsing alarm lights
@@ -65,6 +65,9 @@ const Lighting = ({ settings }) => {
 
   return (
     <>
+      {/* HEMISPHERE FILL LIGHT */}
+      <hemisphereLight skyColor="#ffffff" groundColor="#475569" intensity={0.6} />
+
       {/* GLOBAL AMBIENT LIGHT */}
       <ambientLight color={ambientColor} intensity={ambientIntensity} />
 
@@ -72,7 +75,7 @@ const Lighting = ({ settings }) => {
       {!isBlackoutActive && (
         <directionalLight
           position={[10, 20, 10]}
-          intensity={isEmergency ? 0.25 : 0.8}
+          intensity={isEmergency ? 0.5 : 1.6}
           color={isSecurityDegraded ? '#fbbf24' : '#f8fafc'}
           castShadow={settings.shadows}
           shadow-mapSize-width={512}
