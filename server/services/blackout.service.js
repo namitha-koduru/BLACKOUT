@@ -67,31 +67,44 @@ export const ROLES = {
 // 2D Facility Layout Walkable Rectangles
 export const WALKABLE_AREAS = [
   // Rooms
-  { name: 'CENTRAL HUB', x: 450, y: 300, w: 300, h: 250, type: 'room' },
-  { name: 'SECURITY', x: 450, y: 50, w: 300, h: 150, type: 'room' },
-  { name: 'LABORATORY', x: 100, y: 300, w: 250, h: 250, type: 'room' },
-  { name: 'GENERATOR ROOM', x: 850, y: 300, w: 250, h: 250, type: 'room' },
-  { name: 'COMMUNICATIONS ROOM', x: 450, y: 650, w: 300, h: 150, type: 'room' },
-  { name: 'MEDICAL LAB', x: 450, y: 850, w: 300, h: 120, type: 'room' },
-  { name: 'STORAGE', x: 100, y: 650, w: 250, h: 150, type: 'room' },
-  { name: 'CONTROL ROOM', x: 850, y: 50, w: 250, h: 150, type: 'room' },
-  { name: 'REACTOR / ENGINEERING', x: 850, y: 650, w: 250, h: 150, type: 'room' },
-  { name: 'SERVER ROOM', x: 100, y: 50, w: 250, h: 150, type: 'room' },
-  { name: 'ELECTRICAL ROOM', x: 100, y: 850, w: 250, h: 120, type: 'room' },
+  { name: 'CENTRAL ATRIUM', x: 800, y: 400, w: 280, h: 250, type: 'room' },
+  { name: 'SECURITY', x: 800, y: 100, w: 250, h: 180, type: 'room' },
+  { name: 'OFFICES', x: 450, y: 400, w: 250, h: 200, type: 'room' },
+  { name: 'CONTROL CENTER', x: 1180, y: 100, w: 280, h: 200, type: 'room' },
+  { name: 'SERVER ROOM', x: 1180, y: 380, w: 280, h: 220, type: 'room' },
+  { name: 'COMMUNICATIONS ROOM', x: 1180, y: 680, w: 250, h: 180, type: 'room' },
+  { name: 'RESEARCH LAB', x: 450, y: 700, w: 280, h: 220, type: 'room' },
+  { name: 'MEDICAL LAB', x: 800, y: 750, w: 250, h: 180, type: 'room' },
+  { name: 'CAFETERIA', x: 1180, y: 920, w: 280, h: 220, type: 'room' },
+  { name: 'ROOF ACCESS', x: 450, y: 100, w: 250, h: 180, type: 'room' },
+  { name: 'ENGINEERING', x: 100, y: 100, w: 250, h: 200, type: 'room' },
+  { name: 'MAINTENANCE', x: 100, y: 380, w: 250, h: 200, type: 'room' },
+  { name: 'STORAGE', x: 100, y: 680, w: 250, h: 250, type: 'room' },
+  { name: 'GENERATOR ROOM', x: 100, y: 1000, w: 250, h: 220, type: 'room' },
+  { name: 'REACTOR / POWER CORE', x: 450, y: 1000, w: 280, h: 220, type: 'room' },
+  { name: 'UTILITY ROOM', x: 800, y: 1020, w: 250, h: 180, type: 'room' },
 
   // Hallways/Passages
-  { name: 'HALLWAY_SERVER_SECURITY', x: 350, y: 100, w: 100, h: 50, type: 'hallway' },
-  { name: 'HALLWAY_SECURITY_CONTROL', x: 750, y: 100, w: 100, h: 50, type: 'hallway' },
-  { name: 'HALLWAY_SERVER_LAB', x: 200, y: 200, w: 50, h: 100, type: 'hallway' },
-  { name: 'HALLWAY_HUB_SECURITY', x: 575, y: 200, w: 50, h: 100, type: 'hallway' },
-  { name: 'HALLWAY_HUB_LAB', x: 350, y: 400, w: 100, h: 50, type: 'hallway' },
-  { name: 'HALLWAY_HUB_GENERATOR', x: 750, y: 400, w: 100, h: 50, type: 'hallway' },
-  { name: 'HALLWAY_LAB_STORAGE', x: 200, y: 550, w: 50, h: 100, type: 'hallway' },
-  { name: 'HALLWAY_HUB_COMMS', x: 575, y: 550, w: 50, h: 100, type: 'hallway' },
-  { name: 'HALLWAY_GENERATOR_REACTOR', x: 950, y: 550, w: 50, h: 100, type: 'hallway' },
-  { name: 'HALLWAY_STORAGE_ELECTRICAL', x: 200, y: 800, w: 50, h: 50, type: 'hallway' },
-  { name: 'HALLWAY_COMMS_MEDICAL', x: 575, y: 800, w: 50, h: 50, type: 'hallway' },
-  { name: 'HALLWAY_ELECTRICAL_MEDICAL', x: 350, y: 880, w: 100, h: 50, type: 'hallway' }
+  { name: 'HALLWAY_ROOF_OFFICES', x: 550, y: 280, w: 60, h: 120, type: 'hallway' },
+  { name: 'HALLWAY_OFFICES_ATRIUM', x: 700, y: 480, w: 100, h: 60, type: 'hallway' },
+  { name: 'HALLWAY_ATRIUM_SECURITY', x: 910, y: 280, w: 60, h: 120, type: 'hallway' },
+  { name: 'HALLWAY_SECURITY_CONTROL', x: 1050, y: 160, w: 130, h: 60, type: 'hallway' },
+  { name: 'HALLWAY_CONTROL_SERVER', x: 1290, y: 300, w: 60, h: 80, type: 'hallway' },
+  { name: 'HALLWAY_ATRIUM_SERVER', x: 1080, y: 460, w: 100, h: 60, type: 'hallway' },
+  { name: 'HALLWAY_SERVER_COMMS', x: 1290, y: 600, w: 60, h: 80, type: 'hallway' },
+  { name: 'HALLWAY_ATRIUM_COMMS', x: 1080, y: 730, w: 100, h: 60, type: 'hallway' },
+  { name: 'HALLWAY_COMMS_CAFETERIA', x: 1290, y: 860, w: 60, h: 60, type: 'hallway' },
+  { name: 'HALLWAY_ATRIUM_MEDICAL', x: 900, y: 650, w: 60, h: 100, type: 'hallway' },
+  { name: 'HALLWAY_MEDICAL_UTILITY', x: 900, y: 930, w: 60, h: 90, type: 'hallway' },
+  { name: 'HALLWAY_ATRIUM_LAB', x: 700, y: 760, w: 100, h: 60, type: 'hallway' },
+  { name: 'HALLWAY_LAB_REACTOR', x: 560, y: 920, w: 60, h: 80, type: 'hallway' },
+  { name: 'HALLWAY_STAIRS', x: 350, y: 750, w: 100, h: 60, type: 'hallway' },
+  { name: 'HALLWAY_ELEVATOR', x: 350, y: 450, w: 100, h: 60, type: 'hallway' },
+  { name: 'HALLWAY_ENGINEERING_MAINTENANCE', x: 190, y: 300, w: 60, h: 80, type: 'hallway' },
+  { name: 'HALLWAY_MAINTENANCE_STORAGE', x: 190, y: 580, w: 60, h: 100, type: 'hallway' },
+  { name: 'HALLWAY_STORAGE_GENERATOR', x: 190, y: 930, w: 60, h: 70, type: 'hallway' },
+  { name: 'HALLWAY_GENERATOR_REACTOR', x: 350, y: 1080, w: 100, h: 60, type: 'hallway' },
+  { name: 'HALLWAY_REACTOR_UTILITY', x: 730, y: 1080, w: 70, h: 60, type: 'hallway' }
 ];
 
 /**
@@ -662,15 +675,15 @@ export const startGame = (roomCode, io, hostId) => {
   const gamePlayers = {};
 
   room.players.forEach((p, idx) => {
-    // Stagger initial positions inside the CENTRAL HUB (x: 450-750, y: 300-550)
-    const staggerX = 600 + (idx % 5) * 30 - 60;
-    const staggerY = 450 + Math.floor(idx / 5) * 30 - 15;
+    // Stagger initial positions inside the CENTRAL ATRIUM (center: x: 940, y: 525)
+    const staggerX = 940 + (idx % 5) * 30 - 60;
+    const staggerY = 525 + Math.floor(idx / 5) * 30 - 15;
 
     gamePlayers[p.id] = {
       role: roleAssignments[p.id].role,
       team: roleAssignments[p.id].team,
       isAlive: true,
-      currentRoom: 'CENTRAL HUB',
+      currentRoom: 'CENTRAL ATRIUM',
       position: { x: staggerX, y: staggerY },
       lastActive: Date.now(),
     };

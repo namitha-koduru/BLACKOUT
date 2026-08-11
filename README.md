@@ -1,8 +1,8 @@
 # 🚨 BLACKOUT — Real-Time Multiplayer Social Deduction Game
 
-BLACKOUT is a real-time multiplayer social deduction and investigation game designed for **4 to 10 players**. Trapped in a facility during a major power failure, players are secretly assigned roles. The majority are Crew members trying to restore critical systems and discover clues, while a secret minority are Saboteurs seeking to disrupt operations, manipulate evidence database records, and cause facility failure.
+BLACKOUT is a real-time multiplayer social deduction and investigation game designed for **4 to 10 players**. Trapped inside an **Abandoned Futuristic Research Facility** during a major power failure, players are secretly assigned roles. The majority are Crew members trying to restore critical systems and discover clues, while a secret minority are Saboteurs seeking to disrupt operations, manipulate evidence database records, and cause facility failure.
 
-No database, authentication, or account registration is required — everything runs in-memory while the server is running.
+The layout spans a Ground Level and Lower Level connected by functional elevator guides and staircases, featuring 16 detailed architectural rooms (such as Atrium, Reactor, Servers, and Control Room) populated with functional equipment. No database, authentication, or account registration is required — everything runs in-memory while the server is running.
 
 ---
 

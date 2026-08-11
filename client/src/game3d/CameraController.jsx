@@ -2,6 +2,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { getFloorHeight } from './Facility.jsx';
 
 const CameraController = ({ targetX, targetZ, activeRepairSession, nearSystem, nearTerminal }) => {
   const { camera, gl } = useThree();
@@ -62,19 +63,21 @@ const CameraController = ({ targetX, targetZ, activeRepairSession, nearSystem, n
   }, [gl]);
 
   useFrame((state, delta) => {
+    const floorY = getFloorHeight(targetX, targetZ);
     // Determine player focal point
-    let lookTarget = new THREE.Vector3(targetX, 0.8, targetZ);
+    let lookTarget = new THREE.Vector3(targetX, floorY + 0.8, targetZ);
     let cameraTarget = new THREE.Vector3();
 
     // Cinematic zoom focus when interacting with system consoles
     if (activeRepairSession || nearSystem) {
       const consoleX = (activeRepairSession?.x || nearSystem?.x || targetX);
       const consoleZ = (activeRepairSession?.y || nearSystem?.y || targetZ);
+      const consoleFloorY = getFloorHeight(consoleX, consoleZ);
       
-      lookTarget.set(consoleX, 0.7, consoleZ);
+      lookTarget.set(consoleX, consoleFloorY + 0.7, consoleZ);
       cameraTarget.set(
         consoleX - 1.8,
-        1.5,
+        consoleFloorY + 1.5,
         consoleZ + 1.8
       );
     } else {
@@ -85,7 +88,7 @@ const CameraController = ({ targetX, targetZ, activeRepairSession, nearSystem, n
 
       cameraTarget.set(
         targetX + Math.sin(th) * Math.cos(ph) * rad,
-        Math.max(0.5, Math.min(4.5, Math.sin(ph) * rad)), // Cap camera height below ceiling level (5.5m)
+        floorY + Math.max(0.5, Math.min(4.5, Math.sin(ph) * rad)), // Cap camera height below relative ceiling level
         targetZ + Math.cos(th) * Math.cos(ph) * rad
       );
     }

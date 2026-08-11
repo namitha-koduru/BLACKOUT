@@ -6,43 +6,122 @@ import * as THREE from 'three';
 
 const SCALE = 0.08; // scale factor to translate 2D coordinate values to 3D meters
 
+export const getFloorHeight = (x3D, z3D) => {
+  // Convert 3D coordinates back to 2D for easier bounds checking
+  const x2D = x3D / SCALE;
+  const y2D = z3D / SCALE;
+
+  // 1. Check if inside any specific Ground Level rooms
+  if (x2D >= 800 && x2D <= 1080 && y2D >= 400 && y2D <= 650) return 0; // Atrium
+  if (x2D >= 800 && x2D <= 1050 && y2D >= 100 && y2D <= 280) return 0; // Security
+  if (x2D >= 450 && x2D <= 700 && y2D >= 400 && y2D <= 600) return 0;  // Offices
+  if (x2D >= 1180 && x2D <= 1460 && y2D >= 100 && y2D <= 300) return 0; // Control Center
+  if (x2D >= 1180 && x2D <= 1460 && y2D >= 380 && y2D <= 600) return 0; // Server Room
+  if (x2D >= 1180 && x2D <= 1430 && y2D >= 680 && y2D <= 860) return 0; // Comms Room
+  if (x2D >= 450 && x2D <= 730 && y2D >= 700 && y2D <= 920) return 0;  // Research Lab
+  if (x2D >= 800 && x2D <= 1050 && y2D >= 750 && y2D <= 930) return 0;  // Medical Lab
+  if (x2D >= 1180 && x2D <= 1460 && y2D >= 920 && y2D <= 1140) return 0; // Cafeteria
+  if (x2D >= 450 && x2D <= 700 && y2D >= 100 && y2D <= 280) return 0;  // Roof Access
+
+  // Ground level hallways
+  if (x2D >= 550 && x2D <= 610 && y2D >= 280 && y2D <= 400) return 0;
+  if (x2D >= 700 && x2D <= 800 && y2D >= 480 && y2D <= 540) return 0;
+  if (x2D >= 910 && x2D <= 970 && y2D >= 280 && y2D <= 400) return 0;
+  if (x2D >= 1050 && x2D <= 1180 && y2D >= 160 && y2D <= 220) return 0;
+  if (x2D >= 1290 && x2D <= 1350 && y2D >= 300 && y2D <= 380) return 0;
+  if (x2D >= 1080 && x2D <= 1180 && y2D >= 460 && y2D <= 520) return 0;
+  if (x2D >= 1290 && x2D <= 1350 && y2D >= 600 && y2D <= 680) return 0;
+  if (x2D >= 1080 && x2D <= 1180 && y2D >= 730 && y2D <= 790) return 0;
+  if (x2D >= 1290 && x2D <= 1350 && y2D >= 860 && y2D <= 920) return 0;
+  if (x2D >= 900 && x2D <= 960 && y2D >= 650 && y2D <= 750) return 0;
+  if (x2D >= 700 && x2D <= 800 && y2D >= 760 && y2D <= 820) return 0;
+
+  // 2. Check if inside Lower Level rooms
+  if (x2D >= 100 && x2D <= 350 && y2D >= 100 && y2D <= 300) return -4;  // Engineering
+  if (x2D >= 100 && x2D <= 350 && y2D >= 380 && y2D <= 580) return -4;  // Maintenance
+  if (x2D >= 100 && x2D <= 350 && y2D >= 680 && y2D <= 930) return -4;  // Storage
+  if (x2D >= 100 && x2D <= 350 && y2D >= 1000 && y2D <= 1220) return -4; // Generator Room
+  if (x2D >= 450 && x2D <= 730 && y2D >= 1000 && y2D <= 1220) return -4; // Reactor Core
+  if (x2D >= 800 && x2D <= 1050 && y2D >= 1020 && y2D <= 1200) return -4; // Utility Room
+
+  // Lower level hallways
+  if (x2D >= 190 && x2D <= 250 && y2D >= 300 && y2D <= 380) return -4;
+  if (x2D >= 190 && x2D <= 250 && y2D >= 580 && y2D <= 680) return -4;
+  if (x2D >= 190 && x2D <= 250 && y2D >= 930 && y2D <= 1000) return -4;
+  if (x2D >= 350 && x2D <= 450 && y2D >= 1080 && y2D <= 1140) return -4;
+  if (x2D >= 730 && x2D <= 800 && y2D >= 1080 && y2D <= 1140) return -4;
+
+  // 3. Transition slopes/stairs
+  if (x2D >= 350 && x2D <= 450 && y2D >= 750 && y2D <= 810) { // HALLWAY_STAIRS
+    const t = (x2D - 350) / 100;
+    return -4 * (1 - t);
+  }
+  if (x2D >= 350 && x2D <= 450 && y2D >= 450 && y2D <= 510) { // HALLWAY_ELEVATOR
+    const t = (x2D - 350) / 100;
+    return -4 * (1 - t);
+  }
+  if (x2D >= 560 && x2D <= 620 && y2D >= 920 && y2D <= 1000) { // HALLWAY_LAB_REACTOR
+    const t = (y2D - 920) / 80;
+    return -4 * t;
+  }
+  if (x2D >= 900 && x2D <= 960 && y2D >= 930 && y2D <= 1020) { // HALLWAY_MEDICAL_UTILITY
+    const t = (y2D - 930) / 90;
+    return -4 * t;
+  }
+
+  return 0;
+};
+
 // 2D Facility Layout Walkable Rectangles
 const WALKABLE_AREAS = [
   // Rooms
-  { name: 'CENTRAL HUB', x: 450, y: 300, w: 300, h: 250, type: 'room', color: '#22d3ee', floorBg: '#1e293b' },
-  { name: 'SECURITY', x: 450, y: 50, w: 300, h: 150, type: 'room', color: '#3b82f6', floorBg: '#1e293b' },
-  { name: 'LABORATORY', x: 100, y: 300, w: 250, h: 250, type: 'room', color: '#8b5cf6', floorBg: '#1e293b' },
-  { name: 'GENERATOR ROOM', x: 850, y: 300, w: 250, h: 250, type: 'room', color: '#f59e0b', floorBg: '#1e293b' },
-  { name: 'COMMUNICATIONS ROOM', x: 450, y: 650, w: 300, h: 150, type: 'room', color: '#22d3ee', floorBg: '#1e293b' },
-  { name: 'MEDICAL LAB', x: 450, y: 850, w: 300, h: 120, type: 'room', color: '#22c55e', floorBg: '#1e293b' },
-  { name: 'STORAGE', x: 100, y: 650, w: 250, h: 150, type: 'room', color: '#f97316', floorBg: '#1e293b' },
-  { name: 'CONTROL ROOM', x: 850, y: 50, w: 250, h: 150, type: 'room', color: '#8b5cf6', floorBg: '#1e293b' },
-  { name: 'REACTOR / ENGINEERING', x: 850, y: 650, w: 250, h: 150, type: 'room', color: '#ef4444', floorBg: '#1e293b' },
-  { name: 'SERVER ROOM', x: 100, y: 50, w: 250, h: 150, type: 'room', color: '#a855f7', floorBg: '#1e293b' },
-  { name: 'ELECTRICAL ROOM', x: 100, y: 850, w: 250, h: 120, type: 'room', color: '#eab308', floorBg: '#1e293b' },
+  { name: 'CENTRAL ATRIUM', x: 800, y: 400, w: 280, h: 250, type: 'room', color: '#64748b', floorBg: '#1e293b' },
+  { name: 'SECURITY', x: 800, y: 100, w: 250, h: 180, type: 'room', color: '#475569', floorBg: '#0f172a' },
+  { name: 'OFFICES', x: 450, y: 400, w: 250, h: 200, type: 'room', color: '#94a3b8', floorBg: '#334155' },
+  { name: 'CONTROL CENTER', x: 1180, y: 100, w: 280, h: 200, type: 'room', color: '#334155', floorBg: '#0f172a' },
+  { name: 'SERVER ROOM', x: 1180, y: 380, w: 280, h: 220, type: 'room', color: '#1e293b', floorBg: '#020617' },
+  { name: 'COMMUNICATIONS ROOM', x: 1180, y: 680, w: 250, h: 180, type: 'room', color: '#475569', floorBg: '#1e293b' },
+  { name: 'RESEARCH LAB', x: 450, y: 700, w: 280, h: 220, type: 'room', color: '#cbd5e1', floorBg: '#0f172a' },
+  { name: 'MEDICAL LAB', x: 800, y: 750, w: 250, h: 180, type: 'room', color: '#e2e8f0', floorBg: '#1e293b' },
+  { name: 'CAFETERIA', x: 1180, y: 920, w: 280, h: 220, type: 'room', color: '#94a3b8', floorBg: '#334155' },
+  { name: 'ROOF ACCESS', x: 450, y: 100, w: 250, h: 180, type: 'room', color: '#64748b', floorBg: '#1e293b' },
+  { name: 'ENGINEERING', x: 100, y: 100, w: 250, h: 200, type: 'room', color: '#475569', floorBg: '#0f172a' },
+  { name: 'MAINTENANCE', x: 100, y: 380, w: 250, h: 200, type: 'room', color: '#334155', floorBg: '#1e293b' },
+  { name: 'STORAGE', x: 100, y: 680, w: 250, h: 250, type: 'room', color: '#64748b', floorBg: '#0f172a' },
+  { name: 'GENERATOR ROOM', x: 100, y: 1000, w: 250, h: 220, type: 'room', color: '#334155', floorBg: '#020617' },
+  { name: 'REACTOR / POWER CORE', x: 450, y: 1000, w: 280, h: 220, type: 'room', color: '#475569', floorBg: '#020617' },
+  { name: 'UTILITY ROOM', x: 800, y: 1020, w: 250, h: 180, type: 'room', color: '#334155', floorBg: '#1e293b' },
 
   // Hallways/Passages
-  { name: 'HALLWAY_SERVER_SECURITY', x: 350, y: 100, w: 100, h: 50, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
-  { name: 'HALLWAY_SECURITY_CONTROL', x: 750, y: 100, w: 100, h: 50, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
-  { name: 'HALLWAY_SERVER_LAB', x: 200, y: 200, w: 50, h: 100, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
-  { name: 'HALLWAY_HUB_SECURITY', x: 575, y: 200, w: 50, h: 100, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
-  { name: 'HALLWAY_HUB_LAB', x: 350, y: 400, w: 100, h: 50, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
-  { name: 'HALLWAY_HUB_GENERATOR', x: 750, y: 400, w: 100, h: 50, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
-  { name: 'HALLWAY_LAB_STORAGE', x: 200, y: 550, w: 50, h: 100, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
-  { name: 'HALLWAY_HUB_COMMS', x: 575, y: 550, w: 50, h: 100, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
-  { name: 'HALLWAY_GENERATOR_REACTOR', x: 950, y: 550, w: 50, h: 100, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
-  { name: 'HALLWAY_STORAGE_ELECTRICAL', x: 200, y: 800, w: 50, h: 50, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
-  { name: 'HALLWAY_COMMS_MEDICAL', x: 575, y: 800, w: 50, h: 50, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
-  { name: 'HALLWAY_ELECTRICAL_MEDICAL', x: 350, y: 880, w: 100, h: 50, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' }
+  { name: 'HALLWAY_ROOF_OFFICES', x: 550, y: 280, w: 60, h: 120, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
+  { name: 'HALLWAY_OFFICES_ATRIUM', x: 700, y: 480, w: 100, h: 60, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
+  { name: 'HALLWAY_ATRIUM_SECURITY', x: 910, y: 280, w: 60, h: 120, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
+  { name: 'HALLWAY_SECURITY_CONTROL', x: 1050, y: 160, w: 130, h: 60, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
+  { name: 'HALLWAY_CONTROL_SERVER', x: 1290, y: 300, w: 60, h: 80, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
+  { name: 'HALLWAY_ATRIUM_SERVER', x: 1080, y: 460, w: 100, h: 60, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
+  { name: 'HALLWAY_SERVER_COMMS', x: 1290, y: 600, w: 60, h: 80, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
+  { name: 'HALLWAY_ATRIUM_COMMS', x: 1080, y: 730, w: 100, h: 60, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
+  { name: 'HALLWAY_COMMS_CAFETERIA', x: 1290, y: 860, w: 60, h: 60, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
+  { name: 'HALLWAY_ATRIUM_MEDICAL', x: 900, y: 650, w: 60, h: 100, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
+  { name: 'HALLWAY_MEDICAL_UTILITY', x: 900, y: 930, w: 60, h: 90, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
+  { name: 'HALLWAY_ATRIUM_LAB', x: 700, y: 760, w: 100, h: 60, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
+  { name: 'HALLWAY_LAB_REACTOR', x: 560, y: 920, w: 60, h: 80, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
+  { name: 'HALLWAY_STAIRS', x: 350, y: 750, w: 100, h: 60, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
+  { name: 'HALLWAY_ELEVATOR', x: 350, y: 450, w: 100, h: 60, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
+  { name: 'HALLWAY_ENGINEERING_MAINTENANCE', x: 190, y: 300, w: 60, h: 80, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
+  { name: 'HALLWAY_MAINTENANCE_STORAGE', x: 190, y: 580, w: 60, h: 100, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
+  { name: 'HALLWAY_STORAGE_GENERATOR', x: 190, y: 930, w: 60, h: 70, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
+  { name: 'HALLWAY_GENERATOR_REACTOR', x: 350, y: 1080, w: 100, h: 60, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
+  { name: 'HALLWAY_REACTOR_UTILITY', x: 730, y: 1080, w: 70, h: 60, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' }
 ];
 
 // Interactive System Consoles
 const SYSTEM_CONSOLES = [
-  { id: 'generator', name: 'Generator', room: 'GENERATOR ROOM', x: 975, y: 425, color: '#f59e0b' },
-  { id: 'communications', name: 'Communications', room: 'COMMUNICATIONS ROOM', x: 600, y: 725, color: '#22d3ee' },
-  { id: 'security', name: 'Security', room: 'SECURITY', x: 600, y: 125, color: '#3b82f6' },
-  { id: 'medical', name: 'Medical', room: 'MEDICAL LAB', x: 600, y: 910, color: '#22c55e' },
-  { id: 'control', name: 'Control System', room: 'CONTROL ROOM', x: 975, y: 125, color: '#8b5cf6' }
+  { id: 'generator', name: 'Generator', room: 'GENERATOR ROOM', x: 220, y: 1110, color: '#f59e0b' },
+  { id: 'communications', name: 'Communications', room: 'COMMUNICATIONS ROOM', x: 1300, y: 770, color: '#22d3ee' },
+  { id: 'security', name: 'Security', room: 'SECURITY', x: 920, y: 190, color: '#3b82f6' },
+  { id: 'medical', name: 'Medical', room: 'MEDICAL LAB', x: 920, y: 840, color: '#22c55e' },
+  { id: 'control', name: 'Control System', room: 'CONTROL CENTER', x: 1320, y: 200, color: '#8b5cf6' }
 ];
 
 const DoorGate3D = ({ name, x, y, w, h, isLocked }) => {
@@ -189,25 +268,86 @@ const Facility = ({ lockedDoors }) => {
         const cenX = (area.x + area.w / 2) * SCALE;
         const cenZ = (area.y + area.h / 2) * SCALE;
 
+        // Determine area-specific floor height
+        const floorY = getFloorHeight(cenX, cenZ);
+
         return (
-          <group key={area.name}>
-            {/* WALKABLE FLOOR SLAB (DARK SLATE SHINY METAL) */}
-            <mesh position={[cenX, -0.05, cenZ]} receiveShadow>
-              <boxGeometry args={[width3D, 0.1, depth3D]} />
-              <meshStandardMaterial
-                color={area.floorBg}
-                roughness={0.2}
-                metalness={0.8}
+          <group key={area.name} position={[0, floorY, 0]}>
+            {/* WALKABLE FLOOR SLAB */}
+            {area.name === 'HALLWAY_STAIRS' ? (
+              // RENDER DETAILED STAIR STEPS
+              <group>
+                {Array.from({ length: 10 }).map((_, i) => {
+                  const stepW = width3D / 10;
+                  const stepH = 4.0 / 10;
+                  // Left side (Storage) is -4, right side (Research Lab) is 0
+                  const stepX = cenX - width3D / 2 + stepW * (i + 0.5);
+                  // Absolute Y coordinates for the step
+                  const stepY = -4 + stepH * i;
+                  return (
+                    <mesh key={i} position={[stepX, stepY - floorY + stepH / 2, cenZ]} castShadow receiveShadow>
+                      <boxGeometry args={[stepW, stepH, depth3D]} />
+                      <meshStandardMaterial color="#475569" roughness={0.4} metalness={0.6} />
+                    </mesh>
+                  );
+                })}
+                {/* Stair Handrails */}
+                <mesh position={[cenX, 1.0 - floorY, cenZ - depth3D / 2 + 0.05]} rotation={[0, 0, Math.atan2(4, width3D)]}>
+                  <cylinderGeometry args={[0.04, 0.04, Math.hypot(width3D, 4), 8]} />
+                  <meshStandardMaterial color="#94a3b8" metalness={0.9} roughness={0.1} />
+                </mesh>
+                <mesh position={[cenX, 1.0 - floorY, cenZ + depth3D / 2 - 0.05]} rotation={[0, 0, Math.atan2(4, width3D)]}>
+                  <cylinderGeometry args={[0.04, 0.04, Math.hypot(width3D, 4), 8]} />
+                  <meshStandardMaterial color="#94a3b8" metalness={0.9} roughness={0.1} />
+                </mesh>
+              </group>
+            ) : area.name === 'HALLWAY_ELEVATOR' ? (
+              // RENDER SLEEK GLASS & INDUSTRIAL ELEVATOR CABIN
+              <group>
+                {/* Floor plate */}
+                <mesh position={[cenX, -0.05, cenZ]} receiveShadow>
+                  <boxGeometry args={[width3D, 0.1, depth3D]} />
+                  <meshStandardMaterial color="#1e293b" metalness={0.9} roughness={0.3} />
+                </mesh>
+                {/* Corner vertical guide rails */}
+                <mesh position={[cenX - width3D / 2 + 0.1, 2 - floorY, cenZ - depth3D / 2 + 0.1]}>
+                  <boxGeometry args={[0.1, 8, 0.1]} />
+                  <meshStandardMaterial color="#64748b" metalness={0.8} />
+                </mesh>
+                <mesh position={[cenX - width3D / 2 + 0.1, 2 - floorY, cenZ + depth3D / 2 - 0.1]}>
+                  <boxGeometry args={[0.1, 8, 0.1]} />
+                  <meshStandardMaterial color="#64748b" metalness={0.8} />
+                </mesh>
+                <mesh position={[cenX + width3D / 2 - 0.1, 2 - floorY, cenZ - depth3D / 2 + 0.1]}>
+                  <boxGeometry args={[0.1, 8, 0.1]} />
+                  <meshStandardMaterial color="#64748b" metalness={0.8} />
+                </mesh>
+                <mesh position={[cenX + width3D / 2 - 0.1, 2 - floorY, cenZ + depth3D / 2 - 0.1]}>
+                  <boxGeometry args={[0.1, 8, 0.1]} />
+                  <meshStandardMaterial color="#64748b" metalness={0.8} />
+                </mesh>
+              </group>
+            ) : (
+              // STANDARD FLOOR SLAB
+              <mesh position={[cenX, -0.05, cenZ]} receiveShadow>
+                <boxGeometry args={[width3D, 0.1, depth3D]} />
+                <meshStandardMaterial
+                  color={area.floorBg}
+                  roughness={0.2}
+                  metalness={0.8}
+                />
+              </mesh>
+            )}
+
+            {/* GRID LINES PATTERN */}
+            {area.name !== 'HALLWAY_STAIRS' && (
+              <gridHelper
+                args={[Math.max(width3D, depth3D), 12, area.color || '#334155', area.color || '#334155']}
+                position={[cenX, 0.015, cenZ]}
               />
-            </mesh>
+            )}
 
-            {/* GRID LINES PATTERN (Holographic Room Accent Grid) */}
-            <gridHelper
-              args={[Math.max(width3D, depth3D), 12, area.color || '#334155', area.color || '#334155']}
-              position={[cenX, 0.015, cenZ]}
-            />
-
-            {/* CEILING SLABS (DARK INDIGO CEILING PANELING) */}
+            {/* CEILING SLABS */}
             <mesh position={[cenX, 5.5, cenZ]} castShadow>
               <boxGeometry args={[width3D, 0.1, depth3D]} />
               <meshStandardMaterial
@@ -217,7 +357,7 @@ const Facility = ({ lockedDoors }) => {
               />
             </mesh>
 
-            {/* SOLID ROOM WALLS (Sleek Graphite Gray Metal) */}
+            {/* SOLID ROOM WALLS */}
             {/* Left Wall */}
             <mesh position={[cenX - width3D / 2, 2.75, cenZ]}>
               <boxGeometry args={[0.15, 5.5, depth3D]} />
@@ -239,7 +379,7 @@ const Facility = ({ lockedDoors }) => {
               <meshStandardMaterial color="#1e293b" roughness={0.3} metalness={0.6} />
             </mesh>
 
-            {/* NEON GLOW WALL BORDER TRIMS (Renders on all four room walls) */}
+            {/* NEON GLOW WALL BORDER TRIMS */}
             {area.type === 'room' && (
               <group>
                 <mesh position={[cenX, 2.2, cenZ + depth3D / 2 - 0.1]}>
@@ -318,29 +458,183 @@ const Facility = ({ lockedDoors }) => {
   );
 };
 
-// Room Objects & Furniture Decoration Component
 const RoomObjects = ({ roomName, cenX, cenZ, width3D, depth3D, roomColor }) => {
   switch (roomName) {
-    case 'GENERATOR ROOM':
+    case 'CENTRAL ATRIUM':
       return (
         <group>
-          {/* Large Generator Core */}
-          <mesh position={[cenX, 1.2, cenZ]} castShadow>
-            <cylinderGeometry args={[1.2, 1.5, 2.4, 24]} />
-            <meshStandardMaterial color="#334155" metalness={0.9} roughness={0.15} />
+          {/* Central Reception Desk */}
+          <mesh position={[cenX, 0.45, cenZ]} castShadow receiveShadow>
+            <boxGeometry args={[3.2, 0.9, 1.4]} />
+            <meshStandardMaterial color="#334155" metalness={0.7} roughness={0.3} />
           </mesh>
-          {/* Copper winding pipes */}
-          <mesh position={[cenX, 1.2, cenZ]}>
-            <torusGeometry args={[1.3, 0.08, 12, 24]} />
-            <meshStandardMaterial color="#b45309" metalness={0.9} roughness={0.1} />
+          {/* Holographic display stand */}
+          <mesh position={[cenX, 1.25, cenZ]}>
+            <cylinderGeometry args={[0.05, 0.05, 0.7, 8]} />
+            <meshStandardMaterial color="#64748b" metalness={0.9} />
           </mesh>
-          <mesh position={[cenX, 2.4, cenZ]}>
-            <cylinderGeometry args={[0.8, 0.8, 0.2, 24]} />
-            <meshStandardMaterial color="#f59e0b" emissive="#f59e0b" emissiveIntensity={0.6} />
+          <mesh position={[cenX, 1.65, cenZ]}>
+            <sphereGeometry args={[0.25, 16, 16]} />
+            <meshStandardMaterial color="#22d3ee" emissive="#22d3ee" emissiveIntensity={1.2} transparent opacity={0.6} />
+          </mesh>
+          {/* Atrium corner plants */}
+          <mesh position={[cenX - width3D / 2.3, 0.4, cenZ - depth3D / 2.3]} castShadow>
+            <cylinderGeometry args={[0.4, 0.3, 0.8, 12]} />
+            <meshStandardMaterial color="#475569" roughness={0.6} />
+          </mesh>
+          <mesh position={[cenX - width3D / 2.3, 1.0, cenZ - depth3D / 2.3]}>
+            <sphereGeometry args={[0.35, 12, 12]} />
+            <meshStandardMaterial color="#10b981" roughness={0.9} />
+          </mesh>
+          <mesh position={[cenX + width3D / 2.3, 0.4, cenZ + depth3D / 2.3]} castShadow>
+            <cylinderGeometry args={[0.4, 0.3, 0.8, 12]} />
+            <meshStandardMaterial color="#475569" roughness={0.6} />
+          </mesh>
+          <mesh position={[cenX + width3D / 2.3, 1.0, cenZ + depth3D / 2.3]}>
+            <sphereGeometry args={[0.35, 12, 12]} />
+            <meshStandardMaterial color="#10b981" roughness={0.9} />
           </mesh>
         </group>
       );
-    case 'LABORATORY':
+    case 'SECURITY':
+      return (
+        <group>
+          {/* CCTV Monitor Desk */}
+          <mesh position={[cenX, 0.5, cenZ - depth3D / 3]} castShadow>
+            <boxGeometry args={[2.8, 0.9, 0.8]} />
+            <meshStandardMaterial color="#1e293b" metalness={0.6} roughness={0.4} />
+          </mesh>
+          {/* Monitor Screens */}
+          <mesh position={[cenX - 0.7, 1.2, cenZ - depth3D / 3 + 0.15]} rotation={[0.1, 0.25, 0]}>
+            <boxGeometry args={[0.6, 0.45, 0.05]} />
+            <meshStandardMaterial color="#0f172a" emissive="#3b82f6" emissiveIntensity={0.8} />
+          </mesh>
+          <mesh position={[cenX, 1.2, cenZ - depth3D / 3 + 0.15]} rotation={[0.1, 0, 0]}>
+            <boxGeometry args={[0.7, 0.45, 0.05]} />
+            <meshStandardMaterial color="#0f172a" emissive="#3b82f6" emissiveIntensity={0.9} />
+          </mesh>
+          <mesh position={[cenX + 0.7, 1.2, cenZ - depth3D / 3 + 0.15]} rotation={[0.1, -0.25, 0]}>
+            <boxGeometry args={[0.6, 0.45, 0.05]} />
+            <meshStandardMaterial color="#0f172a" emissive="#3b82f6" emissiveIntensity={0.8} />
+          </mesh>
+          {/* Security Locker Cabinets */}
+          <mesh position={[cenX - width3D / 3, 0.9, cenZ + depth3D / 4]} castShadow>
+            <boxGeometry args={[0.6, 1.8, 0.6]} />
+            <meshStandardMaterial color="#475569" metalness={0.8} roughness={0.3} />
+          </mesh>
+        </group>
+      );
+    case 'OFFICES':
+      return (
+        <group>
+          {/* Cubicle Desks */}
+          <mesh position={[cenX - width3D / 4, 0.45, cenZ - depth3D / 4]} castShadow>
+            <boxGeometry args={[1.4, 0.9, 0.8]} />
+            <meshStandardMaterial color="#cbd5e1" roughness={0.4} />
+          </mesh>
+          {/* Office computer */}
+          <mesh position={[cenX - width3D / 4, 1.1, cenZ - depth3D / 4]}>
+            <boxGeometry args={[0.5, 0.35, 0.05]} />
+            <meshStandardMaterial color="#020617" emissive="#22d3ee" emissiveIntensity={0.6} />
+          </mesh>
+          <mesh position={[cenX + width3D / 4, 0.45, cenZ + depth3D / 4]} castShadow>
+            <boxGeometry args={[1.4, 0.9, 0.8]} />
+            <meshStandardMaterial color="#cbd5e1" roughness={0.4} />
+          </mesh>
+          <mesh position={[cenX + width3D / 4, 1.1, cenZ + depth3D / 4]}>
+            <boxGeometry args={[0.5, 0.35, 0.05]} />
+            <meshStandardMaterial color="#020617" emissive="#22d3ee" emissiveIntensity={0.6} />
+          </mesh>
+        </group>
+      );
+    case 'CONTROL CENTER':
+      return (
+        <group>
+          {/* Large Central Command Table */}
+          <mesh position={[cenX, 0.45, cenZ]} castShadow receiveShadow>
+            <cylinderGeometry args={[1.4, 1.4, 0.9, 32]} />
+            <meshStandardMaterial color="#1e293b" metalness={0.7} roughness={0.3} />
+          </mesh>
+          {/* Holographic Projection Core */}
+          <mesh position={[cenX, 1.25, cenZ]}>
+            <cylinderGeometry args={[0.3, 0.3, 0.6, 16]} />
+            <meshStandardMaterial color="#64748b" metalness={0.9} />
+          </mesh>
+          <mesh position={[cenX, 1.7, cenZ]}>
+            <sphereGeometry args={[0.8, 16, 16]} />
+            <meshStandardMaterial color="#8b5cf6" emissive="#8b5cf6" emissiveIntensity={1.4} transparent opacity={0.4} wireframe />
+          </mesh>
+          {/* Operator chairs */}
+          <mesh position={[cenX - 1.8, 0.45, cenZ]} castShadow>
+            <cylinderGeometry args={[0.3, 0.3, 0.9, 12]} />
+            <meshStandardMaterial color="#334155" roughness={0.5} />
+          </mesh>
+          <mesh position={[cenX + 1.8, 0.45, cenZ]} castShadow>
+            <cylinderGeometry args={[0.3, 0.3, 0.9, 12]} />
+            <meshStandardMaterial color="#334155" roughness={0.5} />
+          </mesh>
+        </group>
+      );
+    case 'SERVER ROOM':
+      return (
+        <group>
+          {/* Multiple Tall Server Racks */}
+          <mesh position={[cenX - 1.5, 1.2, cenZ - 0.8]} castShadow>
+            <boxGeometry args={[0.6, 2.4, 1.2]} />
+            <meshStandardMaterial color="#0f172a" metalness={0.8} roughness={0.2} />
+          </mesh>
+          <mesh position={[cenX - 1.5 + 0.31, 1.2, cenZ - 0.8]}>
+            <boxGeometry args={[0.02, 2.2, 1.0]} />
+            <meshStandardMaterial color="#22c55e" emissive="#22c55e" emissiveIntensity={0.8} />
+          </mesh>
+          <mesh position={[cenX - 1.5, 1.2, cenZ + 0.8]} castShadow>
+            <boxGeometry args={[0.6, 2.4, 1.2]} />
+            <meshStandardMaterial color="#0f172a" metalness={0.8} roughness={0.2} />
+          </mesh>
+          <mesh position={[cenX - 1.5 + 0.31, 1.2, cenZ + 0.8]}>
+            <boxGeometry args={[0.02, 2.2, 1.0]} />
+            <meshStandardMaterial color="#f59e0b" emissive="#f59e0b" emissiveIntensity={0.8} />
+          </mesh>
+
+          <mesh position={[cenX + 1.5, 1.2, cenZ - 0.8]} castShadow>
+            <boxGeometry args={[0.6, 2.4, 1.2]} />
+            <meshStandardMaterial color="#0f172a" metalness={0.8} roughness={0.2} />
+          </mesh>
+          <mesh position={[cenX + 1.5 - 0.31, 1.2, cenZ - 0.8]}>
+            <boxGeometry args={[0.02, 2.2, 1.0]} />
+            <meshStandardMaterial color="#22c55e" emissive="#22c55e" emissiveIntensity={0.8} />
+          </mesh>
+          <mesh position={[cenX + 1.5, 1.2, cenZ + 0.8]} castShadow>
+            <boxGeometry args={[0.6, 2.4, 1.2]} />
+            <meshStandardMaterial color="#0f172a" metalness={0.8} roughness={0.2} />
+          </mesh>
+          <mesh position={[cenX + 1.5 - 0.31, 1.2, cenZ + 0.8]}>
+            <boxGeometry args={[0.02, 2.2, 1.0]} />
+            <meshStandardMaterial color="#8b5cf6" emissive="#8b5cf6" emissiveIntensity={0.8} />
+          </mesh>
+        </group>
+      );
+    case 'COMMUNICATIONS ROOM':
+      return (
+        <group>
+          {/* Comm console desk */}
+          <mesh position={[cenX, 0.45, cenZ + depth3D / 4]} castShadow>
+            <boxGeometry args={[2.5, 0.9, 0.8]} />
+            <meshStandardMaterial color="#334155" metalness={0.7} roughness={0.3} />
+          </mesh>
+          {/* Signal wave monitor */}
+          <mesh position={[cenX, 1.15, cenZ + depth3D / 4 - 0.1]}>
+            <boxGeometry args={[0.9, 0.5, 0.05]} />
+            <meshStandardMaterial color="#0f172a" emissive="#22d3ee" emissiveIntensity={0.8} />
+          </mesh>
+          {/* Radio equipment rack */}
+          <mesh position={[cenX - width3D / 3, 1.0, cenZ - depth3D / 3]} castShadow>
+            <boxGeometry args={[0.8, 2.0, 0.8]} />
+            <meshStandardMaterial color="#1e293b" metalness={0.8} />
+          </mesh>
+        </group>
+      );
+    case 'RESEARCH LAB':
       return (
         <group>
           {/* Containment Pods */}
@@ -357,160 +651,199 @@ const RoomObjects = ({ roomName, cenX, cenZ, width3D, depth3D, roomColor }) => {
             <meshStandardMaterial color="#273449" metalness={0.8} />
           </mesh>
 
-          <mesh position={[cenX + width3D / 3, 1.1, cenZ - depth3D / 4]} castShadow>
-            <cylinderGeometry args={[0.4, 0.4, 2.2, 16]} />
-            <meshStandardMaterial color="#8b5cf6" transparent opacity={0.3} roughness={0.1} />
+          {/* Research Benches */}
+          <mesh position={[cenX + width3D / 4, 0.45, cenZ - depth3D / 4]} castShadow>
+            <boxGeometry args={[1.8, 0.9, 0.9]} />
+            <meshStandardMaterial color="#cbd5e1" roughness={0.3} />
           </mesh>
-          <mesh position={[cenX + width3D / 3, 2.25, cenZ - depth3D / 4]}>
-            <cylinderGeometry args={[0.42, 0.42, 0.1, 16]} />
-            <meshStandardMaterial color="#273449" metalness={0.8} />
-          </mesh>
-          <mesh position={[cenX + width3D / 3, 0.05, cenZ - depth3D / 4]}>
-            <cylinderGeometry args={[0.42, 0.42, 0.1, 16]} />
-            <meshStandardMaterial color="#273449" metalness={0.8} />
-          </mesh>
-        </group>
-      );
-    case 'SECURITY':
-      return (
-        <group>
-          {/* Security Monitoring Desks & consoles */}
-          <mesh position={[cenX, 0.5, cenZ - depth3D / 4]} castShadow>
-            <boxGeometry args={[2.0, 1.0, 0.8]} />
-            <meshStandardMaterial color="#1e293b" metalness={0.6} roughness={0.4} />
-          </mesh>
-          {/* Monitors */}
-          <mesh position={[cenX - 0.5, 1.2, cenZ - depth3D / 4 + 0.1]} rotation={[0.1, 0.2, 0]}>
-            <boxGeometry args={[0.6, 0.4, 0.08]} />
-            <meshStandardMaterial color="#0f172a" emissive="#3b82f6" emissiveIntensity={0.8} />
-          </mesh>
-          <mesh position={[cenX + 0.5, 1.2, cenZ - depth3D / 4 + 0.1]} rotation={[0.1, -0.2, 0]}>
-            <boxGeometry args={[0.6, 0.4, 0.08]} />
-            <meshStandardMaterial color="#0f172a" emissive="#3b82f6" emissiveIntensity={0.8} />
+          {/* Microscope placeholder */}
+          <mesh position={[cenX + width3D / 4, 1.1, cenZ - depth3D / 4]}>
+            <cylinderGeometry args={[0.1, 0.15, 0.4, 8]} />
+            <meshStandardMaterial color="#475569" metalness={0.8} />
           </mesh>
         </group>
       );
     case 'MEDICAL LAB':
       return (
         <group>
-          {/* Treatment Beds */}
+          {/* Medical diagnostic beds */}
           <mesh position={[cenX - width3D / 4, 0.35, cenZ - depth3D / 4]} castShadow>
-            <boxGeometry args={[0.7, 0.7, 1.4]} />
+            <boxGeometry args={[0.8, 0.7, 1.6]} />
             <meshStandardMaterial color="#cbd5e1" roughness={0.5} />
           </mesh>
           <mesh position={[cenX - width3D / 4, 0.75, cenZ - depth3D / 4]}>
-            <boxGeometry args={[0.6, 0.1, 1.2]} />
+            <boxGeometry args={[0.7, 0.1, 1.4]} />
             <meshStandardMaterial color="#22c55e" roughness={0.8} />
           </mesh>
 
           <mesh position={[cenX + width3D / 4, 0.35, cenZ + depth3D / 4]} castShadow>
-            <boxGeometry args={[0.7, 0.7, 1.4]} />
+            <boxGeometry args={[0.8, 0.7, 1.6]} />
             <meshStandardMaterial color="#cbd5e1" roughness={0.5} />
           </mesh>
           <mesh position={[cenX + width3D / 4, 0.75, cenZ + depth3D / 4]}>
-            <boxGeometry args={[0.6, 0.1, 1.2]} />
+            <boxGeometry args={[0.7, 0.1, 1.4]} />
             <meshStandardMaterial color="#22c55e" roughness={0.8} />
+          </mesh>
+        </group>
+      );
+    case 'CAFETERIA':
+      return (
+        <group>
+          {/* Dining tables and chairs */}
+          <mesh position={[cenX - 1.2, 0.4, cenZ - 1.2]} castShadow>
+            <cylinderGeometry args={[0.8, 0.8, 0.8, 16]} />
+            <meshStandardMaterial color="#94a3b8" roughness={0.4} />
+          </mesh>
+          <mesh position={[cenX + 1.2, 0.4, cenZ + 1.2]} castShadow>
+            <cylinderGeometry args={[0.8, 0.8, 0.8, 16]} />
+            <meshStandardMaterial color="#94a3b8" roughness={0.4} />
+          </mesh>
+          {/* Vending machine */}
+          <mesh position={[cenX - width3D / 3, 1.0, cenZ + depth3D / 3]} castShadow>
+            <boxGeometry args={[0.8, 2.0, 0.8]} />
+            <meshStandardMaterial color="#f43f5e" metalness={0.5} />
+          </mesh>
+          <mesh position={[cenX - width3D / 3 + 0.41, 1.2, cenZ + depth3D / 3]}>
+            <boxGeometry args={[0.02, 0.6, 0.6]} />
+            <meshStandardMaterial color="#020617" emissive="#38bdf8" emissiveIntensity={0.8} />
+          </mesh>
+        </group>
+      );
+    case 'ROOF ACCESS':
+      return (
+        <group>
+          {/* Heavy airlock door frames */}
+          <mesh position={[cenX, 1.5, cenZ - depth3D / 3]} castShadow>
+            <boxGeometry args={[2.0, 3.0, 0.3]} />
+            <meshStandardMaterial color="#475569" metalness={0.8} />
+          </mesh>
+          {/* Glass arch indicator */}
+          <mesh position={[cenX, 3.1, cenZ - depth3D / 3]}>
+            <boxGeometry args={[1.6, 0.2, 0.32]} />
+            <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={1.0} />
+          </mesh>
+        </group>
+      );
+    case 'ENGINEERING':
+      return (
+        <group>
+          {/* Fluid pumps & Control cabinets */}
+          <mesh position={[cenX - 1.0, 0.6, cenZ]} castShadow>
+            <cylinderGeometry args={[0.5, 0.6, 1.2, 12]} />
+            <meshStandardMaterial color="#334155" metalness={0.8} />
+          </mesh>
+          <mesh position={[cenX - 1.0, 1.2, cenZ]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[0.7, 0.12, 8, 16]} />
+            <meshStandardMaterial color="#94a3b8" metalness={0.9} />
+          </mesh>
+          <mesh position={[cenX + 1.0, 0.9, cenZ + depth3D / 4]} castShadow>
+            <boxGeometry args={[1.2, 1.8, 0.6]} />
+            <meshStandardMaterial color="#1e293b" metalness={0.8} />
+          </mesh>
+        </group>
+      );
+    case 'MAINTENANCE':
+      return (
+        <group>
+          {/* Workbench with tool panels */}
+          <mesh position={[cenX, 0.45, cenZ - depth3D / 4]} castShadow>
+            <boxGeometry args={[2.2, 0.9, 0.8]} />
+            <meshStandardMaterial color="#475569" roughness={0.5} />
+          </mesh>
+          <mesh position={[cenX - 0.8, 1.2, cenZ - depth3D / 4 + 0.1]}>
+            <boxGeometry args={[0.1, 0.5, 0.1]} />
+            <meshStandardMaterial color="#b45309" metalness={0.9} />
+          </mesh>
+          {/* Spares cabinet */}
+          <mesh position={[cenX + width3D / 3, 1.0, cenZ + depth3D / 4]} castShadow>
+            <boxGeometry args={[0.8, 2.0, 0.8]} />
+            <meshStandardMaterial color="#334155" metalness={0.7} />
           </mesh>
         </group>
       );
     case 'STORAGE':
       return (
         <group>
-          {/* Cargo Crates */}
-          <mesh position={[cenX - width3D / 3, 0.45, cenZ - depth3D / 4]} castShadow>
-            <boxGeometry args={[0.9, 0.9, 0.9]} />
-            <meshStandardMaterial color="#d97706" metalness={0.1} roughness={0.9} />
+          {/* Cargo pallets & Crates */}
+          <mesh position={[cenX - width3D / 4, 0.45, cenZ - depth3D / 4]} castShadow>
+            <boxGeometry args={[1.2, 0.9, 1.2]} />
+            <meshStandardMaterial color="#d97706" roughness={0.9} />
           </mesh>
-          <mesh position={[cenX - width3D / 3 + 0.3, 0.35, cenZ + depth3D / 4]} castShadow>
+          <mesh position={[cenX + width3D / 4, 0.35, cenZ + depth3D / 4]} castShadow>
+            <boxGeometry args={[0.8, 0.7, 0.8]} />
+            <meshStandardMaterial color="#b45309" roughness={0.9} />
+          </mesh>
+          {/* Large crate stack */}
+          <mesh position={[cenX + width3D / 4, 1.1, cenZ + depth3D / 4]} castShadow>
             <boxGeometry args={[0.7, 0.7, 0.7]} />
-            <meshStandardMaterial color="#78350f" metalness={0.1} roughness={0.9} />
-          </mesh>
-          <mesh position={[cenX + width3D / 3, 0.5, cenZ]} castShadow>
-            <boxGeometry args={[1.0, 1.0, 1.0]} />
-            <meshStandardMaterial color="#92400e" metalness={0.1} roughness={0.9} />
+            <meshStandardMaterial color="#78350f" roughness={0.9} />
           </mesh>
         </group>
       );
-    case 'CENTRAL HUB':
+    case 'GENERATOR ROOM':
       return (
         <group>
-          {/* Columns in Hub Corners */}
-          <mesh position={[cenX - width3D / 2.3, 2.75, cenZ - depth3D / 2.3]} castShadow>
-            <cylinderGeometry args={[0.3, 0.3, 5.5, 16]} />
-            <meshStandardMaterial color="#273449" metalness={0.8} />
+          {/* Massive Central Fuel Generator Core */}
+          <mesh position={[cenX, 1.8, cenZ]} castShadow>
+            <cylinderGeometry args={[1.6, 2.0, 3.6, 24]} />
+            <meshStandardMaterial color="#334155" metalness={0.9} roughness={0.15} />
           </mesh>
-          <mesh position={[cenX - width3D / 2.3, 2.75, cenZ + depth3D / 2.3]} castShadow>
-            <cylinderGeometry args={[0.3, 0.3, 5.5, 16]} />
-            <meshStandardMaterial color="#273449" metalness={0.8} />
+          {/* Copper pipe loops */}
+          <mesh position={[cenX, 1.8, cenZ]}>
+            <torusGeometry args={[1.8, 0.12, 12, 24]} />
+            <meshStandardMaterial color="#b45309" metalness={0.9} roughness={0.1} />
           </mesh>
-          <mesh position={[cenX + width3D / 2.3, 2.75, cenZ - depth3D / 2.3]} castShadow>
-            <cylinderGeometry args={[0.3, 0.3, 5.5, 16]} />
-            <meshStandardMaterial color="#273449" metalness={0.8} />
+          <mesh position={[cenX, 3.6, cenZ]}>
+            <cylinderGeometry args={[1.2, 1.2, 0.3, 24]} />
+            <meshStandardMaterial color="#f59e0b" emissive="#f59e0b" emissiveIntensity={0.8} />
           </mesh>
-          <mesh position={[cenX + width3D / 2.3, 2.75, cenZ + depth3D / 2.3]} castShadow>
-            <cylinderGeometry args={[0.3, 0.3, 5.5, 16]} />
-            <meshStandardMaterial color="#273449" metalness={0.8} />
+          {/* Steel safety rails */}
+          <mesh position={[cenX - 2.2, 0.6, cenZ]}>
+            <boxGeometry args={[0.08, 1.2, 3.0]} />
+            <meshStandardMaterial color="#94a3b8" metalness={0.8} />
+          </mesh>
+          <mesh position={[cenX + 2.2, 0.6, cenZ]}>
+            <boxGeometry args={[0.08, 1.2, 3.0]} />
+            <meshStandardMaterial color="#94a3b8" metalness={0.8} />
           </mesh>
         </group>
       );
-    case 'SERVER ROOM':
+    case 'REACTOR / POWER CORE':
       return (
         <group>
-          {/* Multiple Tall Server Racks */}
-          <mesh position={[cenX - 1.2, 1.2, cenZ - 0.8]} castShadow>
-            <boxGeometry args={[0.6, 2.4, 1.2]} />
-            <meshStandardMaterial color="#0f172a" metalness={0.8} roughness={0.2} />
-          </mesh>
-          <mesh position={[cenX - 1.2 + 0.31, 1.2, cenZ - 0.8]}>
-            <boxGeometry args={[0.02, 2.2, 1.0]} />
-            <meshStandardMaterial color="#22c55e" emissive="#22c55e" emissiveIntensity={0.8} />
-          </mesh>
-
-          <mesh position={[cenX + 1.2, 1.2, cenZ + 0.8]} castShadow>
-            <boxGeometry args={[0.6, 2.4, 1.2]} />
-            <meshStandardMaterial color="#0f172a" metalness={0.8} roughness={0.2} />
-          </mesh>
-          <mesh position={[cenX + 1.2 - 0.31, 1.2, cenZ + 0.8]}>
-            <boxGeometry args={[0.02, 2.2, 1.0]} />
-            <meshStandardMaterial color="#8b5cf6" emissive="#8b5cf6" emissiveIntensity={0.8} />
-          </mesh>
-        </group>
-      );
-    case 'ELECTRICAL ROOM':
-      return (
-        <group>
-          {/* Power Transformers & Panels */}
-          <mesh position={[cenX, 0.9, cenZ - depth3D / 3]} castShadow>
-            <boxGeometry args={[1.6, 1.8, 0.6]} />
-            <meshStandardMaterial color="#334155" metalness={0.9} roughness={0.1} />
-          </mesh>
-          <mesh position={[cenX - 0.4, 1.1, cenZ - depth3D / 3 + 0.31]}>
-            <boxGeometry args={[0.3, 0.3, 0.05]} />
-            <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={1.0} />
-          </mesh>
-          <mesh position={[cenX + 0.4, 1.1, cenZ - depth3D / 3 + 0.31]}>
-            <boxGeometry args={[0.3, 0.3, 0.05]} />
-            <meshStandardMaterial color="#22c55e" emissive="#22c55e" emissiveIntensity={1.0} />
-          </mesh>
-        </group>
-      );
-    case 'REACTOR / ENGINEERING':
-      return (
-        <group>
-          {/* Glowing Reactor Core and Cooling Pipes */}
-          <mesh position={[cenX, 1.4, cenZ]} castShadow>
-            <cylinderGeometry args={[0.9, 1.2, 2.8, 16]} />
+          {/* Massive restricted Core Chamber */}
+          <mesh position={[cenX, 2.0, cenZ]} castShadow>
+            <cylinderGeometry args={[1.4, 1.8, 4.0, 16]} />
             <meshStandardMaterial color="#1e293b" metalness={0.7} roughness={0.3} />
           </mesh>
-          {/* Plasma core glow */}
-          <mesh position={[cenX, 1.4, cenZ]}>
-            <cylinderGeometry args={[0.92, 0.92, 1.5, 16]} />
+          {/* Core high energy radiation core glow */}
+          <mesh position={[cenX, 2.0, cenZ]}>
+            <cylinderGeometry args={[1.42, 1.42, 2.2, 16]} />
             <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={1.8} transparent opacity={0.65} />
           </mesh>
-          {/* Cooling pipe loops */}
+          {/* Overhead safety warning frame */}
           <mesh position={[cenX, 0.8, cenZ]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[1.5, 0.12, 8, 24]} />
-            <meshStandardMaterial color="#475569" metalness={0.8} />
+            <torusGeometry args={[2.2, 0.16, 8, 24]} />
+            <meshStandardMaterial color="#eab308" metalness={0.8} />
+          </mesh>
+        </group>
+      );
+    case 'UTILITY ROOM':
+      return (
+        <group>
+          {/* Cylindrical water treatment tubes */}
+          <mesh position={[cenX - 0.8, 0.9, cenZ - depth3D / 4]} castShadow>
+            <cylinderGeometry args={[0.4, 0.4, 1.8, 12]} />
+            <meshStandardMaterial color="#0284c7" metalness={0.8} roughness={0.2} />
+          </mesh>
+          <mesh position={[cenX + 0.8, 0.9, cenZ - depth3D / 4]} castShadow>
+            <cylinderGeometry args={[0.4, 0.4, 1.8, 12]} />
+            <meshStandardMaterial color="#0284c7" metalness={0.8} roughness={0.2} />
+          </mesh>
+          {/* Large air ventilation boxes */}
+          <mesh position={[cenX, 1.2, cenZ + depth3D / 4]} castShadow>
+            <boxGeometry args={[1.4, 1.4, 1.0]} />
+            <meshStandardMaterial color="#475569" roughness={0.6} />
           </mesh>
         </group>
       );

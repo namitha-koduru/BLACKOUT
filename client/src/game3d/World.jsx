@@ -1,7 +1,6 @@
-// game3d/World.jsx
 import React from 'react';
 import { Html } from '@react-three/drei';
-import Facility from './Facility.jsx';
+import Facility, { getFloorHeight } from './Facility.jsx';
 import Player3D from './Player3D.jsx';
 import OtherPlayer3D from './OtherPlayer3D.jsx';
 import CameraController from './CameraController.jsx';
@@ -27,26 +26,27 @@ const ACCENT_COLORS = [
 ];
 
 const TASK_POSITIONS = {
-  generator_calibration: { x: 920, y: 350 },
-  coolant_pressure: { x: 920, y: 720 },
-  camera_alignment: { x: 500, y: 100 },
-  server_maintenance: { x: 280, y: 100 },
-  sample_analysis: { x: 550, y: 920 },
-  comms_calibration: { x: 500, y: 720 },
-  water_purification: { x: 980, y: 720 },
-  air_filtration: { x: 980, y: 680 },
-  fuel_transfer: { x: 180, y: 720 },
-  power_routing: { x: 280, y: 910 },
-  access_reset: { x: 580, y: 100 },
-  data_backup: { x: 180, y: 100 },
-  reactor_temp: { x: 900, y: 680 },
-  sensor_calibration: { x: 280, y: 350 },
-  facility_inspection: { x: 600, y: 400 }
+  generator_calibration: { x: 220, y: 1110 },
+  coolant_pressure: { x: 520, y: 1110 },
+  camera_alignment: { x: 920, y: 190 },
+  server_maintenance: { x: 1300, y: 460 },
+  sample_analysis: { x: 920, y: 840 },
+  comms_calibration: { x: 1300, y: 770 },
+  water_purification: { x: 900, y: 1110 },
+  air_filtration: { x: 980, y: 1110 },
+  fuel_transfer: { x: 220, y: 750 },
+  power_routing: { x: 220, y: 450 },
+  access_reset: { x: 980, y: 190 },
+  data_backup: { x: 1380, y: 460 },
+  reactor_temp: { x: 620, y: 1110 },
+  sensor_calibration: { x: 550, y: 800 },
+  facility_inspection: { x: 940, y: 525 }
 };
 
 const TaskMarker3D = ({ x, z, taskName }) => {
+  const floorY = getFloorHeight(x, z);
   return (
-    <group position={[x, 0.01, z]}>
+    <group position={[x, floorY + 0.01, z]}>
       {/* Pulsing base ring */}
       <mesh rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.35, 0.4, 32]} />
@@ -70,9 +70,10 @@ const TaskMarker3D = ({ x, z, taskName }) => {
 const DeadBody3D = ({ x, z, victimName, playerIdx }) => {
   const safeIdx = playerIdx !== undefined && playerIdx >= 0 ? playerIdx : 0;
   const accentColor = ACCENT_COLORS[safeIdx % ACCENT_COLORS.length];
+  const floorY = getFloorHeight(x, z);
 
   return (
-    <group position={[x, 0.05, z]}>
+    <group position={[x, floorY + 0.05, z]}>
       {/* Tilted Torso */}
       <group rotation={[Math.PI / 2, 0, Math.PI / 4]} position={[0, 0.1, 0]}>
         <mesh castShadow receiveShadow>

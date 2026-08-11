@@ -1,6 +1,7 @@
 // game3d/Player3D.jsx
 import React from 'react';
 import { Html } from '@react-three/drei';
+import { getFloorHeight } from './Facility.jsx';
 
 const ACCENT_COLORS = [
   '#06b6d4', // Cyan
@@ -20,9 +21,10 @@ const ACCENT_COLORS = [
 const Player3D = ({ x, z, name, avatar, isAlive, playerIdx }) => {
   const safeIdx = playerIdx !== undefined && playerIdx >= 0 ? playerIdx : 0;
   const accentColor = ACCENT_COLORS[safeIdx % ACCENT_COLORS.length];
+  const floorY = getFloorHeight(x, z);
 
   return (
-    <group position={[x, 0, z]}>
+    <group position={[x, floorY, z]}>
       {/* 3D CHARACTER TECHNICAL MESH */}
       {isAlive ? (
         <group position={[0, 0.7, 0]}>

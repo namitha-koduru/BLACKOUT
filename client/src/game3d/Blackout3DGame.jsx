@@ -22,59 +22,72 @@ import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const TASK_POSITIONS = {
-  generator_calibration: { x: 920, y: 350 },
-  coolant_pressure: { x: 920, y: 720 },
-  camera_alignment: { x: 500, y: 100 },
-  server_maintenance: { x: 280, y: 100 },
-  sample_analysis: { x: 550, y: 920 },
-  comms_calibration: { x: 500, y: 720 },
-  water_purification: { x: 980, y: 720 },
-  air_filtration: { x: 980, y: 680 },
-  fuel_transfer: { x: 180, y: 720 },
-  power_routing: { x: 280, y: 910 },
-  access_reset: { x: 580, y: 100 },
-  data_backup: { x: 180, y: 100 },
-  reactor_temp: { x: 900, y: 680 },
-  sensor_calibration: { x: 280, y: 350 },
-  facility_inspection: { x: 600, y: 400 }
+  generator_calibration: { x: 220, y: 1110 },
+  coolant_pressure: { x: 520, y: 1110 },
+  camera_alignment: { x: 920, y: 190 },
+  server_maintenance: { x: 1300, y: 460 },
+  sample_analysis: { x: 920, y: 840 },
+  comms_calibration: { x: 1300, y: 770 },
+  water_purification: { x: 900, y: 1110 },
+  air_filtration: { x: 980, y: 1110 },
+  fuel_transfer: { x: 220, y: 750 },
+  power_routing: { x: 220, y: 450 },
+  access_reset: { x: 980, y: 190 },
+  data_backup: { x: 1380, y: 460 },
+  reactor_temp: { x: 620, y: 1110 },
+  sensor_calibration: { x: 550, y: 800 },
+  facility_inspection: { x: 940, y: 525 }
 };
 
 // Walkable rectangles for boundary check (duplicates server definitions)
 const WALKABLE_AREAS = [
   // Rooms
-  { name: 'CENTRAL HUB', x: 450, y: 300, w: 300, h: 250, type: 'room' },
-  { name: 'SECURITY', x: 450, y: 50, w: 300, h: 150, type: 'room' },
-  { name: 'LABORATORY', x: 100, y: 300, w: 250, h: 250, type: 'room' },
-  { name: 'GENERATOR ROOM', x: 850, y: 300, w: 250, h: 250, type: 'room' },
-  { name: 'COMMUNICATIONS ROOM', x: 450, y: 650, w: 300, h: 150, type: 'room' },
-  { name: 'MEDICAL LAB', x: 450, y: 850, w: 300, h: 120, type: 'room' },
-  { name: 'STORAGE', x: 100, y: 650, w: 250, h: 150, type: 'room' },
-  { name: 'CONTROL ROOM', x: 850, y: 50, w: 250, h: 150, type: 'room' },
-  { name: 'REACTOR / ENGINEERING', x: 850, y: 650, w: 250, h: 150, type: 'room' },
-  { name: 'SERVER ROOM', x: 100, y: 50, w: 250, h: 150, type: 'room' },
-  { name: 'ELECTRICAL ROOM', x: 100, y: 850, w: 250, h: 120, type: 'room' },
+  { name: 'CENTRAL ATRIUM', x: 800, y: 400, w: 280, h: 250, type: 'room' },
+  { name: 'SECURITY', x: 800, y: 100, w: 250, h: 180, type: 'room' },
+  { name: 'OFFICES', x: 450, y: 400, w: 250, h: 200, type: 'room' },
+  { name: 'CONTROL CENTER', x: 1180, y: 100, w: 280, h: 200, type: 'room' },
+  { name: 'SERVER ROOM', x: 1180, y: 380, w: 280, h: 220, type: 'room' },
+  { name: 'COMMUNICATIONS ROOM', x: 1180, y: 680, w: 250, h: 180, type: 'room' },
+  { name: 'RESEARCH LAB', x: 450, y: 700, w: 280, h: 220, type: 'room' },
+  { name: 'MEDICAL LAB', x: 800, y: 750, w: 250, h: 180, type: 'room' },
+  { name: 'CAFETERIA', x: 1180, y: 920, w: 280, h: 220, type: 'room' },
+  { name: 'ROOF ACCESS', x: 450, y: 100, w: 250, h: 180, type: 'room' },
+  { name: 'ENGINEERING', x: 100, y: 100, w: 250, h: 200, type: 'room' },
+  { name: 'MAINTENANCE', x: 100, y: 380, w: 250, h: 200, type: 'room' },
+  { name: 'STORAGE', x: 100, y: 680, w: 250, h: 250, type: 'room' },
+  { name: 'GENERATOR ROOM', x: 100, y: 1000, w: 250, h: 220, type: 'room' },
+  { name: 'REACTOR / POWER CORE', x: 450, y: 1000, w: 280, h: 220, type: 'room' },
+  { name: 'UTILITY ROOM', x: 800, y: 1020, w: 250, h: 180, type: 'room' },
 
   // Hallways
-  { name: 'HALLWAY_SERVER_SECURITY', x: 350, y: 100, w: 100, h: 50, type: 'hallway' },
-  { name: 'HALLWAY_SECURITY_CONTROL', x: 750, y: 100, w: 100, h: 50, type: 'hallway' },
-  { name: 'HALLWAY_SERVER_LAB', x: 200, y: 200, w: 50, h: 100, type: 'hallway' },
-  { name: 'HALLWAY_HUB_SECURITY', x: 575, y: 200, w: 50, h: 100, type: 'hallway' },
-  { name: 'HALLWAY_HUB_LAB', x: 350, y: 400, w: 100, h: 50, type: 'hallway' },
-  { name: 'HALLWAY_HUB_GENERATOR', x: 750, y: 400, w: 100, h: 50, type: 'hallway' },
-  { name: 'HALLWAY_LAB_STORAGE', x: 200, y: 550, w: 50, h: 100, type: 'hallway' },
-  { name: 'HALLWAY_HUB_COMMS', x: 575, y: 550, w: 50, h: 100, type: 'hallway' },
-  { name: 'HALLWAY_GENERATOR_REACTOR', x: 950, y: 550, w: 50, h: 100, type: 'hallway' },
-  { name: 'HALLWAY_STORAGE_ELECTRICAL', x: 200, y: 800, w: 50, h: 50, type: 'hallway' },
-  { name: 'HALLWAY_COMMS_MEDICAL', x: 575, y: 800, w: 50, h: 50, type: 'hallway' },
-  { name: 'HALLWAY_ELECTRICAL_MEDICAL', x: 350, y: 880, w: 100, h: 50, type: 'hallway' }
+  { name: 'HALLWAY_ROOF_OFFICES', x: 550, y: 280, w: 60, h: 120, type: 'hallway' },
+  { name: 'HALLWAY_OFFICES_ATRIUM', x: 700, y: 480, w: 100, h: 60, type: 'hallway' },
+  { name: 'HALLWAY_ATRIUM_SECURITY', x: 910, y: 280, w: 60, h: 120, type: 'hallway' },
+  { name: 'HALLWAY_SECURITY_CONTROL', x: 1050, y: 160, w: 130, h: 60, type: 'hallway' },
+  { name: 'HALLWAY_CONTROL_SERVER', x: 1290, y: 300, w: 60, h: 80, type: 'hallway' },
+  { name: 'HALLWAY_ATRIUM_SERVER', x: 1080, y: 460, w: 100, h: 60, type: 'hallway' },
+  { name: 'HALLWAY_SERVER_COMMS', x: 1290, y: 600, w: 60, h: 80, type: 'hallway' },
+  { name: 'HALLWAY_ATRIUM_COMMS', x: 1080, y: 730, w: 100, h: 60, type: 'hallway' },
+  { name: 'HALLWAY_COMMS_CAFETERIA', x: 1290, y: 860, w: 60, h: 60, type: 'hallway' },
+  { name: 'HALLWAY_ATRIUM_MEDICAL', x: 900, y: 650, w: 60, h: 100, type: 'hallway' },
+  { name: 'HALLWAY_MEDICAL_UTILITY', x: 900, y: 930, w: 60, h: 90, type: 'hallway' },
+  { name: 'HALLWAY_ATRIUM_LAB', x: 700, y: 760, w: 100, h: 60, type: 'hallway' },
+  { name: 'HALLWAY_LAB_REACTOR', x: 560, y: 920, w: 60, h: 80, type: 'hallway' },
+  { name: 'HALLWAY_STAIRS', x: 350, y: 750, w: 100, h: 60, type: 'hallway' },
+  { name: 'HALLWAY_ELEVATOR', x: 350, y: 450, w: 100, h: 60, type: 'hallway' },
+  { name: 'HALLWAY_ENGINEERING_MAINTENANCE', x: 190, y: 300, w: 60, h: 80, type: 'hallway' },
+  { name: 'HALLWAY_MAINTENANCE_STORAGE', x: 190, y: 580, w: 60, h: 100, type: 'hallway' },
+  { name: 'HALLWAY_STORAGE_GENERATOR', x: 190, y: 930, w: 60, h: 70, type: 'hallway' },
+  { name: 'HALLWAY_GENERATOR_REACTOR', x: 350, y: 1080, w: 100, h: 60, type: 'hallway' },
+  { name: 'HALLWAY_REACTOR_UTILITY', x: 730, y: 1080, w: 70, h: 60, type: 'hallway' }
 ];
 
 const SYSTEM_CONSOLES = [
-  { id: 'generator', name: 'Generator', room: 'GENERATOR', x: 975, y: 425 },
-  { id: 'communications', name: 'Communications', room: 'COMMUNICATIONS', x: 600, y: 725 },
-  { id: 'security', name: 'Security', room: 'SECURITY', x: 600, y: 125 },
-  { id: 'medical', name: 'Medical', room: 'MEDICAL', x: 600, y: 910 },
-  { id: 'control', name: 'Control System', room: 'CONTROL ROOM', x: 975, y: 125 }
+  { id: 'generator', name: 'Generator', room: 'GENERATOR ROOM', x: 220, y: 1110 },
+  { id: 'communications', name: 'Communications', room: 'COMMUNICATIONS ROOM', x: 1300, y: 770 },
+  { id: 'security', name: 'Security', room: 'SECURITY', x: 920, y: 190 },
+  { id: 'medical', name: 'Medical', room: 'MEDICAL LAB', x: 920, y: 840 },
+  { id: 'control', name: 'Control System', room: 'CONTROL CENTER', x: 1320, y: 200 }
 ];
 
 const isValidPosition = (x, y) => {

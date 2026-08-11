@@ -3,38 +3,38 @@ import { createEvidence } from './evidence.service.js';
 
 export const TASK_TYPES = {
   generator_calibration: { id: 'generator_calibration', name: 'Generator Calibration', room: 'GENERATOR ROOM', gameType: 'slider' },
-  coolant_pressure: { id: 'coolant_pressure', name: 'Coolant Pressure', room: 'REACTOR / ENGINEERING', gameType: 'valve' },
+  coolant_pressure: { id: 'coolant_pressure', name: 'Coolant Pressure', room: 'REACTOR / POWER CORE', gameType: 'valve' },
   camera_alignment: { id: 'camera_alignment', name: 'Camera Alignment', room: 'SECURITY', gameType: 'camera' },
   server_maintenance: { id: 'server_maintenance', name: 'Server Maintenance', room: 'SERVER ROOM', gameType: 'wires' },
   sample_analysis: { id: 'sample_analysis', name: 'Medical Sample Analysis', room: 'MEDICAL LAB', gameType: 'sample' },
   comms_calibration: { id: 'comms_calibration', name: 'Communication Calibration', room: 'COMMUNICATIONS ROOM', gameType: 'slider' },
-  water_purification: { id: 'water_purification', name: 'Water Purification', room: 'REACTOR / ENGINEERING', gameType: 'valve' },
-  air_filtration: { id: 'air_filtration', name: 'Air Filtration', room: 'REACTOR / ENGINEERING', gameType: 'slider' },
+  water_purification: { id: 'water_purification', name: 'Water Purification', room: 'UTILITY ROOM', gameType: 'valve' },
+  air_filtration: { id: 'air_filtration', name: 'Air Filtration', room: 'UTILITY ROOM', gameType: 'slider' },
   fuel_transfer: { id: 'fuel_transfer', name: 'Fuel Transfer', room: 'STORAGE', gameType: 'slider' },
-  power_routing: { id: 'power_routing', name: 'Power Routing', room: 'ELECTRICAL ROOM', gameType: 'wires' },
+  power_routing: { id: 'power_routing', name: 'Power Routing', room: 'MAINTENANCE', gameType: 'wires' },
   access_reset: { id: 'access_reset', name: 'Security Access Reset', room: 'SECURITY', gameType: 'code' },
   data_backup: { id: 'data_backup', name: 'Data Backup', room: 'SERVER ROOM', gameType: 'code' },
-  reactor_temp: { id: 'reactor_temp', name: 'Reactor Temperature', room: 'REACTOR / ENGINEERING', gameType: 'slider' },
-  sensor_calibration: { id: 'sensor_calibration', name: 'Sensor Calibration', room: 'LABORATORY', gameType: 'slider' },
-  facility_inspection: { id: 'facility_inspection', name: 'Facility Inspection', room: 'CENTRAL HUB', gameType: 'code' }
+  reactor_temp: { id: 'reactor_temp', name: 'Reactor Temperature', room: 'REACTOR / POWER CORE', gameType: 'slider' },
+  sensor_calibration: { id: 'sensor_calibration', name: 'Sensor Calibration', room: 'RESEARCH LAB', gameType: 'slider' },
+  facility_inspection: { id: 'facility_inspection', name: 'Facility Inspection', room: 'CENTRAL ATRIUM', gameType: 'code' }
 };
 
 export const TASK_POSITIONS = {
-  generator_calibration: { x: 920, y: 350 },
-  coolant_pressure: { x: 920, y: 720 },
-  camera_alignment: { x: 500, y: 100 },
-  server_maintenance: { x: 280, y: 100 },
-  sample_analysis: { x: 550, y: 920 },
-  comms_calibration: { x: 500, y: 720 },
-  water_purification: { x: 980, y: 720 },
-  air_filtration: { x: 980, y: 680 },
-  fuel_transfer: { x: 180, y: 720 },
-  power_routing: { x: 280, y: 910 },
-  access_reset: { x: 580, y: 100 },
-  data_backup: { x: 180, y: 100 },
-  reactor_temp: { x: 900, y: 680 },
-  sensor_calibration: { x: 280, y: 350 },
-  facility_inspection: { x: 600, y: 400 }
+  generator_calibration: { x: 220, y: 1110 },
+  coolant_pressure: { x: 520, y: 1110 },
+  camera_alignment: { x: 920, y: 190 },
+  server_maintenance: { x: 1300, y: 460 },
+  sample_analysis: { x: 920, y: 840 },
+  comms_calibration: { x: 1300, y: 770 },
+  water_purification: { x: 900, y: 1110 },
+  air_filtration: { x: 980, y: 1110 },
+  fuel_transfer: { x: 220, y: 750 },
+  power_routing: { x: 220, y: 450 },
+  access_reset: { x: 980, y: 190 },
+  data_backup: { x: 1380, y: 460 },
+  reactor_temp: { x: 620, y: 1110 },
+  sensor_calibration: { x: 550, y: 800 },
+  facility_inspection: { x: 940, y: 525 }
 };
 
 /**

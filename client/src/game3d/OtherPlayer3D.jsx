@@ -2,6 +2,7 @@
 import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
+import { getFloorHeight } from './Facility.jsx';
 
 const ACCENT_COLORS = [
   '#06b6d4', // Cyan
@@ -30,12 +31,13 @@ const OtherPlayer3D = ({ name, avatar, targetX, targetZ, isDisconnected, isAlive
     currentPos.current.z += (targetZ - currentPos.current.z) * 0.15;
 
     if (meshRef.current) {
-      meshRef.current.position.set(currentPos.current.x, 0, currentPos.current.z);
+      const floorY = getFloorHeight(currentPos.current.x, currentPos.current.z);
+      meshRef.current.position.set(currentPos.current.x, floorY, currentPos.current.z);
     }
   });
 
   return (
-    <group ref={meshRef} position={[targetX, 0, targetZ]}>
+    <group ref={meshRef} position={[targetX, getFloorHeight(targetX, targetZ), targetZ]}>
       {/* 3D CHARACTER TECHNICAL MESH */}
       {isAlive ? (
         <group position={[0, 0.7, 0]}>

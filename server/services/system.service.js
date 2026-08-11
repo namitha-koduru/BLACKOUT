@@ -2,11 +2,11 @@
 import { createEvidence } from './evidence.service.js';
 
 export const SYSTEM_CONSOLES = {
-  generator: { id: 'generator', name: 'Generator', room: 'GENERATOR', x: 975, y: 425 },
-  communications: { id: 'communications', name: 'Communications', room: 'COMMUNICATIONS', x: 600, y: 725 },
-  security: { id: 'security', name: 'Security', room: 'SECURITY', x: 600, y: 125 },
-  medical: { id: 'medical', name: 'Medical', room: 'MEDICAL', x: 600, y: 910 },
-  control: { id: 'control', name: 'Control System', room: 'CONTROL ROOM', x: 975, y: 125 },
+  generator: { id: 'generator', name: 'Generator', room: 'GENERATOR ROOM', x: 220, y: 1110 },
+  communications: { id: 'communications', name: 'Communications', room: 'COMMUNICATIONS ROOM', x: 1300, y: 770 },
+  security: { id: 'security', name: 'Security', room: 'SECURITY', x: 920, y: 190 },
+  medical: { id: 'medical', name: 'Medical', room: 'MEDICAL LAB', x: 920, y: 840 },
+  control: { id: 'control', name: 'Control System', room: 'CONTROL CENTER', x: 1320, y: 200 },
 };
 
 /**
@@ -38,7 +38,7 @@ export const createSystems = () => {
     generator: {
       id: 'generator',
       name: 'Generator',
-      room: 'GENERATOR',
+      room: 'GENERATOR ROOM',
       health: 40,
       maxHealth: 100,
       status: 'DAMAGED',
@@ -49,7 +49,7 @@ export const createSystems = () => {
     communications: {
       id: 'communications',
       name: 'Communications',
-      room: 'COMMUNICATIONS',
+      room: 'COMMUNICATIONS ROOM',
       health: 50,
       maxHealth: 100,
       status: 'DAMAGED',
@@ -71,7 +71,7 @@ export const createSystems = () => {
     medical: {
       id: 'medical',
       name: 'Medical',
-      room: 'MEDICAL',
+      room: 'MEDICAL LAB',
       health: 30,
       maxHealth: 100,
       status: 'CRITICAL',
@@ -82,7 +82,7 @@ export const createSystems = () => {
     control: {
       id: 'control',
       name: 'Control System',
-      room: 'CONTROL ROOM',
+      room: 'CONTROL CENTER',
       health: 50,
       maxHealth: 100,
       status: 'DAMAGED',
