@@ -11,31 +11,37 @@ const WALKABLE_AREAS = [
   // Rooms
   { name: 'CENTRAL HUB', x: 450, y: 300, w: 300, h: 250, type: 'room', color: '#22d3ee', floorBg: '#1e293b' },
   { name: 'SECURITY', x: 450, y: 50, w: 300, h: 150, type: 'room', color: '#3b82f6', floorBg: '#1e293b' },
-  { name: 'LAB', x: 100, y: 300, w: 250, h: 250, type: 'room', color: '#8b5cf6', floorBg: '#1e293b' },
-  { name: 'GENERATOR', x: 850, y: 300, w: 250, h: 250, type: 'room', color: '#f59e0b', floorBg: '#1e293b' },
-  { name: 'COMMUNICATIONS', x: 450, y: 650, w: 300, h: 150, type: 'room', color: '#22d3ee', floorBg: '#1e293b' },
-  { name: 'MEDICAL', x: 450, y: 850, w: 300, h: 120, type: 'room', color: '#22c55e', floorBg: '#1e293b' },
+  { name: 'LABORATORY', x: 100, y: 300, w: 250, h: 250, type: 'room', color: '#8b5cf6', floorBg: '#1e293b' },
+  { name: 'GENERATOR ROOM', x: 850, y: 300, w: 250, h: 250, type: 'room', color: '#f59e0b', floorBg: '#1e293b' },
+  { name: 'COMMUNICATIONS ROOM', x: 450, y: 650, w: 300, h: 150, type: 'room', color: '#22d3ee', floorBg: '#1e293b' },
+  { name: 'MEDICAL LAB', x: 450, y: 850, w: 300, h: 120, type: 'room', color: '#22c55e', floorBg: '#1e293b' },
   { name: 'STORAGE', x: 100, y: 650, w: 250, h: 150, type: 'room', color: '#f97316', floorBg: '#1e293b' },
   { name: 'CONTROL ROOM', x: 850, y: 50, w: 250, h: 150, type: 'room', color: '#8b5cf6', floorBg: '#1e293b' },
-  { name: 'EXIT', x: 850, y: 650, w: 250, h: 150, type: 'room', color: '#ef4444', floorBg: '#1e293b' },
+  { name: 'REACTOR / ENGINEERING', x: 850, y: 650, w: 250, h: 150, type: 'room', color: '#ef4444', floorBg: '#1e293b' },
+  { name: 'SERVER ROOM', x: 100, y: 50, w: 250, h: 150, type: 'room', color: '#a855f7', floorBg: '#1e293b' },
+  { name: 'ELECTRICAL ROOM', x: 100, y: 850, w: 250, h: 120, type: 'room', color: '#eab308', floorBg: '#1e293b' },
 
   // Hallways/Passages
+  { name: 'HALLWAY_SERVER_SECURITY', x: 350, y: 100, w: 100, h: 50, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
+  { name: 'HALLWAY_SECURITY_CONTROL', x: 750, y: 100, w: 100, h: 50, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
+  { name: 'HALLWAY_SERVER_LAB', x: 200, y: 200, w: 50, h: 100, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
   { name: 'HALLWAY_HUB_SECURITY', x: 575, y: 200, w: 50, h: 100, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
   { name: 'HALLWAY_HUB_LAB', x: 350, y: 400, w: 100, h: 50, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
   { name: 'HALLWAY_HUB_GENERATOR', x: 750, y: 400, w: 100, h: 50, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
-  { name: 'HALLWAY_HUB_COMMS', x: 575, y: 550, w: 50, h: 100, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
-  { name: 'HALLWAY_COMMS_MEDICAL', x: 575, y: 800, w: 50, h: 50, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
   { name: 'HALLWAY_LAB_STORAGE', x: 200, y: 550, w: 50, h: 100, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
-  { name: 'HALLWAY_SECURITY_CONTROL', x: 750, y: 100, w: 100, h: 50, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
-  { name: 'HALLWAY_GENERATOR_EXIT', x: 950, y: 550, w: 50, h: 100, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' }
+  { name: 'HALLWAY_HUB_COMMS', x: 575, y: 550, w: 50, h: 100, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
+  { name: 'HALLWAY_GENERATOR_REACTOR', x: 950, y: 550, w: 50, h: 100, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
+  { name: 'HALLWAY_STORAGE_ELECTRICAL', x: 200, y: 800, w: 50, h: 50, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
+  { name: 'HALLWAY_COMMS_MEDICAL', x: 575, y: 800, w: 50, h: 50, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' },
+  { name: 'HALLWAY_ELECTRICAL_MEDICAL', x: 350, y: 880, w: 100, h: 50, type: 'hallway', color: '#cbd5e1', floorBg: '#1e293b' }
 ];
 
 // Interactive System Consoles
 const SYSTEM_CONSOLES = [
-  { id: 'generator', name: 'Generator', room: 'GENERATOR', x: 975, y: 425, color: '#f59e0b' },
-  { id: 'communications', name: 'Communications', room: 'COMMUNICATIONS', x: 600, y: 725, color: '#22d3ee' },
+  { id: 'generator', name: 'Generator', room: 'GENERATOR ROOM', x: 975, y: 425, color: '#f59e0b' },
+  { id: 'communications', name: 'Communications', room: 'COMMUNICATIONS ROOM', x: 600, y: 725, color: '#22d3ee' },
   { id: 'security', name: 'Security', room: 'SECURITY', x: 600, y: 125, color: '#3b82f6' },
-  { id: 'medical', name: 'Medical', room: 'MEDICAL', x: 600, y: 910, color: '#22c55e' },
+  { id: 'medical', name: 'Medical', room: 'MEDICAL LAB', x: 600, y: 910, color: '#22c55e' },
   { id: 'control', name: 'Control System', room: 'CONTROL ROOM', x: 975, y: 125, color: '#8b5cf6' }
 ];
 
@@ -315,30 +321,26 @@ const Facility = ({ lockedDoors }) => {
 // Room Objects & Furniture Decoration Component
 const RoomObjects = ({ roomName, cenX, cenZ, width3D, depth3D, roomColor }) => {
   switch (roomName) {
-    case 'GENERATOR':
+    case 'GENERATOR ROOM':
       return (
         <group>
-          {/* Reactor Coils / Large Capacitors */}
-          <mesh position={[cenX - width3D / 3, 0.9, cenZ - depth3D / 4]} castShadow>
-            <cylinderGeometry args={[0.5, 0.5, 1.8, 16]} />
-            <meshStandardMaterial color="#475569" metalness={0.7} roughness={0.3} />
+          {/* Large Generator Core */}
+          <mesh position={[cenX, 1.2, cenZ]} castShadow>
+            <cylinderGeometry args={[1.2, 1.5, 2.4, 24]} />
+            <meshStandardMaterial color="#334155" metalness={0.9} roughness={0.15} />
           </mesh>
-          <mesh position={[cenX - width3D / 3, 0.9, cenZ - depth3D / 4]}>
-            <torusGeometry args={[0.55, 0.05, 8, 16]} />
-            <meshBasicMaterial color="#f59e0b" />
+          {/* Copper winding pipes */}
+          <mesh position={[cenX, 1.2, cenZ]}>
+            <torusGeometry args={[1.3, 0.08, 12, 24]} />
+            <meshStandardMaterial color="#b45309" metalness={0.9} roughness={0.1} />
           </mesh>
-
-          <mesh position={[cenX + width3D / 3, 0.9, cenZ + depth3D / 4]} castShadow>
-            <cylinderGeometry args={[0.5, 0.5, 1.8, 16]} />
-            <meshStandardMaterial color="#475569" metalness={0.7} roughness={0.3} />
-          </mesh>
-          <mesh position={[cenX + width3D / 3, 0.9, cenZ + depth3D / 4]}>
-            <torusGeometry args={[0.55, 0.05, 8, 16]} />
-            <meshBasicMaterial color="#f59e0b" />
+          <mesh position={[cenX, 2.4, cenZ]}>
+            <cylinderGeometry args={[0.8, 0.8, 0.2, 24]} />
+            <meshStandardMaterial color="#f59e0b" emissive="#f59e0b" emissiveIntensity={0.6} />
           </mesh>
         </group>
       );
-    case 'LAB':
+    case 'LABORATORY':
       return (
         <group>
           {/* Containment Pods */}
@@ -372,27 +374,23 @@ const RoomObjects = ({ roomName, cenX, cenZ, width3D, depth3D, roomColor }) => {
     case 'SECURITY':
       return (
         <group>
-          {/* Mainframe Server Racks */}
-          <mesh position={[cenX - width3D / 3, 1.0, cenZ - depth3D / 3]} castShadow>
-            <boxGeometry args={[0.6, 2.0, 1.2]} />
-            <meshStandardMaterial color="#0f172a" metalness={0.8} roughness={0.2} />
+          {/* Security Monitoring Desks & consoles */}
+          <mesh position={[cenX, 0.5, cenZ - depth3D / 4]} castShadow>
+            <boxGeometry args={[2.0, 1.0, 0.8]} />
+            <meshStandardMaterial color="#1e293b" metalness={0.6} roughness={0.4} />
           </mesh>
-          <mesh position={[cenX - width3D / 3 + 0.31, 1.0, cenZ - depth3D / 3]}>
-            <boxGeometry args={[0.02, 1.8, 1.0]} />
-            <meshStandardMaterial color="#3b82f6" emissive="#3b82f6" emissiveIntensity={0.8} />
+          {/* Monitors */}
+          <mesh position={[cenX - 0.5, 1.2, cenZ - depth3D / 4 + 0.1]} rotation={[0.1, 0.2, 0]}>
+            <boxGeometry args={[0.6, 0.4, 0.08]} />
+            <meshStandardMaterial color="#0f172a" emissive="#3b82f6" emissiveIntensity={0.8} />
           </mesh>
-
-          <mesh position={[cenX - width3D / 3, 1.0, cenZ + depth3D / 3]} castShadow>
-            <boxGeometry args={[0.6, 2.0, 1.2]} />
-            <meshStandardMaterial color="#0f172a" metalness={0.8} roughness={0.2} />
-          </mesh>
-          <mesh position={[cenX - width3D / 3 + 0.31, 1.0, cenZ + depth3D / 3]}>
-            <boxGeometry args={[0.02, 1.8, 1.0]} />
-            <meshStandardMaterial color="#3b82f6" emissive="#3b82f6" emissiveIntensity={0.8} />
+          <mesh position={[cenX + 0.5, 1.2, cenZ - depth3D / 4 + 0.1]} rotation={[0.1, -0.2, 0]}>
+            <boxGeometry args={[0.6, 0.4, 0.08]} />
+            <meshStandardMaterial color="#0f172a" emissive="#3b82f6" emissiveIntensity={0.8} />
           </mesh>
         </group>
       );
-    case 'MEDICAL':
+    case 'MEDICAL LAB':
       return (
         <group>
           {/* Treatment Beds */}
@@ -452,6 +450,67 @@ const RoomObjects = ({ roomName, cenX, cenZ, width3D, depth3D, roomColor }) => {
           <mesh position={[cenX + width3D / 2.3, 2.75, cenZ + depth3D / 2.3]} castShadow>
             <cylinderGeometry args={[0.3, 0.3, 5.5, 16]} />
             <meshStandardMaterial color="#273449" metalness={0.8} />
+          </mesh>
+        </group>
+      );
+    case 'SERVER ROOM':
+      return (
+        <group>
+          {/* Multiple Tall Server Racks */}
+          <mesh position={[cenX - 1.2, 1.2, cenZ - 0.8]} castShadow>
+            <boxGeometry args={[0.6, 2.4, 1.2]} />
+            <meshStandardMaterial color="#0f172a" metalness={0.8} roughness={0.2} />
+          </mesh>
+          <mesh position={[cenX - 1.2 + 0.31, 1.2, cenZ - 0.8]}>
+            <boxGeometry args={[0.02, 2.2, 1.0]} />
+            <meshStandardMaterial color="#22c55e" emissive="#22c55e" emissiveIntensity={0.8} />
+          </mesh>
+
+          <mesh position={[cenX + 1.2, 1.2, cenZ + 0.8]} castShadow>
+            <boxGeometry args={[0.6, 2.4, 1.2]} />
+            <meshStandardMaterial color="#0f172a" metalness={0.8} roughness={0.2} />
+          </mesh>
+          <mesh position={[cenX + 1.2 - 0.31, 1.2, cenZ + 0.8]}>
+            <boxGeometry args={[0.02, 2.2, 1.0]} />
+            <meshStandardMaterial color="#8b5cf6" emissive="#8b5cf6" emissiveIntensity={0.8} />
+          </mesh>
+        </group>
+      );
+    case 'ELECTRICAL ROOM':
+      return (
+        <group>
+          {/* Power Transformers & Panels */}
+          <mesh position={[cenX, 0.9, cenZ - depth3D / 3]} castShadow>
+            <boxGeometry args={[1.6, 1.8, 0.6]} />
+            <meshStandardMaterial color="#334155" metalness={0.9} roughness={0.1} />
+          </mesh>
+          <mesh position={[cenX - 0.4, 1.1, cenZ - depth3D / 3 + 0.31]}>
+            <boxGeometry args={[0.3, 0.3, 0.05]} />
+            <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={1.0} />
+          </mesh>
+          <mesh position={[cenX + 0.4, 1.1, cenZ - depth3D / 3 + 0.31]}>
+            <boxGeometry args={[0.3, 0.3, 0.05]} />
+            <meshStandardMaterial color="#22c55e" emissive="#22c55e" emissiveIntensity={1.0} />
+          </mesh>
+        </group>
+      );
+    case 'REACTOR / ENGINEERING':
+      return (
+        <group>
+          {/* Glowing Reactor Core and Cooling Pipes */}
+          <mesh position={[cenX, 1.4, cenZ]} castShadow>
+            <cylinderGeometry args={[0.9, 1.2, 2.8, 16]} />
+            <meshStandardMaterial color="#1e293b" metalness={0.7} roughness={0.3} />
+          </mesh>
+          {/* Plasma core glow */}
+          <mesh position={[cenX, 1.4, cenZ]}>
+            <cylinderGeometry args={[0.92, 0.92, 1.5, 16]} />
+            <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={1.8} transparent opacity={0.65} />
+          </mesh>
+          {/* Cooling pipe loops */}
+          <mesh position={[cenX, 0.8, cenZ]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[1.5, 0.12, 8, 24]} />
+            <meshStandardMaterial color="#475569" metalness={0.8} />
           </mesh>
         </group>
       );

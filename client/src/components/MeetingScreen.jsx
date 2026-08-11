@@ -55,13 +55,30 @@ const MeetingScreen = () => {
         {/* HEADER BAR */}
         <header className="border-b border-white/5 bg-red-950/10 px-6 py-4 flex items-center justify-between">
           <div className="text-left">
-            <h2 className="text-base font-black text-red-500 uppercase tracking-widest font-mono flex items-center gap-2 animate-pulse">
-              <span>🚨</span>
-              <span>EMERGENCY SIREN INITIATED</span>
-            </h2>
-            <span className="text-[10px] font-mono text-slate-400">
-              Called by: <span className="text-red-400 font-bold">{callerName}</span>
-            </span>
+            {mt.isBodyReport ? (
+              <>
+                <h2 className="text-base font-black text-red-500 uppercase tracking-widest font-mono flex items-center gap-2 animate-pulse">
+                  <span>☠️</span>
+                  <span>BODY REPORTED IN {String(mt.reportedBody?.roomName).toUpperCase()}</span>
+                </h2>
+                <span className="text-[10px] font-mono text-slate-400">
+                  Reported by: <span className="text-red-400 font-bold">{callerName}</span> | 
+                  Victim: <span className="text-red-400 font-bold">
+                    {room.players.find(p => p.id === mt.reportedBody?.victimId)?.name || 'Crew Member'}
+                  </span>
+                </span>
+              </>
+            ) : (
+              <>
+                <h2 className="text-base font-black text-red-500 uppercase tracking-widest font-mono flex items-center gap-2 animate-pulse">
+                  <span>🚨</span>
+                  <span>EMERGENCY SIREN INITIATED</span>
+                </h2>
+                <span className="text-[10px] font-mono text-slate-400">
+                  Called by: <span className="text-red-400 font-bold">{callerName}</span>
+                </span>
+              </>
+            )}
           </div>
 
           <div className="flex items-center gap-6">

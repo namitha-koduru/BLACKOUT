@@ -8,6 +8,9 @@ import { useSabotage } from '../services/sabotage.service.js';
 import { discoverEvidence, corruptEvidence, inspectTrackerTrace, sanitizeEvidence } from '../services/evidence.service.js';
 import { startMeeting, submitVote, addMeetingChatMessage } from '../services/meeting.service.js';
 import { resetGame } from '../services/gameResult.service.js';
+import * as taskService from '../services/task.service.js';
+import * as killService from '../services/kill.service.js';
+import * as bodyService from '../services/body.service.js';
 
 export const initSocket = (httpServer) => {
   const io = new Server(httpServer, {
@@ -237,6 +240,84 @@ export const initSocket = (httpServer) => {
         if (typeof callback === 'function') {
           callback({ success: true, traces: sanitizedTraces });
         }
+      } catch (err) {
+        if (typeof callback === 'function') {
+          callback({ success: false, message: err.message });
+        }
+      }
+    });
+
+    // --- TASK SYSTEM EVENTS ---
+    socket.on('startTask', ({ roomCode, playerId, taskId }, callback) => {
+      try {
+        const room = roomService.getRoom(roomCode);
+        const task = taskService.startTask(room, playerId, taskId);
+        if (typeof callback === 'function') {
+          callback({ success: true, task });
+        }
+        blackoutService.broadcastRoomState(room, io);
+      } catch (err) {
+        if (typeof callback === 'function') {
+          callback({ success: false, message: err.message });
+        }
+      }
+    });
+
+    socket.on('updateTaskProgress', ({ roomCode, playerId, taskId, progress }, callback) => {
+      try {
+        const room = roomService.getRoom(roomCode);
+        const task = taskService.updateTaskProgress(room, playerId, taskId, progress);
+        if (typeof callback === 'function') {
+          callback({ success: true, task });
+        }
+        blackoutService.broadcastRoomState(room, io);
+      } catch (err) {
+        if (typeof callback === 'function') {
+          callback({ success: false, message: err.message });
+        }
+      }
+    });
+
+    socket.on('completeTask', ({ roomCode, playerId, taskId }, callback) => {
+      try {
+        const room = roomService.getRoom(roomCode);
+        const result = taskService.completeTask(room, playerId, taskId, io);
+        if (typeof callback === 'function') {
+          callback(result);
+        }
+        blackoutService.broadcastRoomState(room, io);
+      } catch (err) {
+        if (typeof callback === 'function') {
+          callback({ success: false, message: err.message });
+        }
+      }
+    });
+
+    // --- IMPOSTER KILL EVENTS ---
+    socket.on('killAttempt', ({ roomCode, killerId, victimId }, callback) => {
+      try {
+        const room = roomService.getRoom(roomCode);
+        const result = killService.killPlayer(room, killerId, victimId, io);
+        if (typeof callback === 'function') {
+          callback(result);
+        }
+        blackoutService.broadcastRoomState(room, io);
+      } catch (err) {
+        if (typeof callback === 'function') {
+          callback({ success: false, message: err.message });
+        }
+      }
+    });
+
+    // --- BODY REPORT EVENTS ---
+    socket.on('reportBody', ({ roomCode, reporterId, bodyId }, callback) => {
+      try {
+        const room = roomService.getRoom(roomCode);
+        const result = bodyService.reportBody(room, reporterId, bodyId, io);
+        if (typeof callback === 'function') {
+          callback(result);
+        }
+        blackoutService.broadcastRoomState(room, io);
       } catch (err) {
         if (typeof callback === 'function') {
           callback({ success: false, message: err.message });

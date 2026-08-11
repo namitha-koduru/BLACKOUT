@@ -13,31 +13,37 @@ const WALKABLE_AREAS = [
   // Rooms
   { name: 'CENTRAL HUB', x: 450, y: 300, w: 300, h: 250, type: 'room' },
   { name: 'SECURITY', x: 450, y: 50, w: 300, h: 150, type: 'room' },
-  { name: 'LAB', x: 100, y: 300, w: 250, h: 250, type: 'room' },
-  { name: 'GENERATOR', x: 850, y: 300, w: 250, h: 250, type: 'room' },
-  { name: 'COMMUNICATIONS', x: 450, y: 650, w: 300, h: 150, type: 'room' },
-  { name: 'MEDICAL', x: 450, y: 850, w: 300, h: 120, type: 'room' },
+  { name: 'LABORATORY', x: 100, y: 300, w: 250, h: 250, type: 'room' },
+  { name: 'GENERATOR ROOM', x: 850, y: 300, w: 250, h: 250, type: 'room' },
+  { name: 'COMMUNICATIONS ROOM', x: 450, y: 650, w: 300, h: 150, type: 'room' },
+  { name: 'MEDICAL LAB', x: 450, y: 850, w: 300, h: 120, type: 'room' },
   { name: 'STORAGE', x: 100, y: 650, w: 250, h: 150, type: 'room' },
   { name: 'CONTROL ROOM', x: 850, y: 50, w: 250, h: 150, type: 'room' },
-  { name: 'EXIT', x: 850, y: 650, w: 250, h: 150, type: 'room' },
+  { name: 'REACTOR / ENGINEERING', x: 850, y: 650, w: 250, h: 150, type: 'room' },
+  { name: 'SERVER ROOM', x: 100, y: 50, w: 250, h: 150, type: 'room' },
+  { name: 'ELECTRICAL ROOM', x: 100, y: 850, w: 250, h: 120, type: 'room' },
 
   // Hallways
+  { name: 'HALLWAY_SERVER_SECURITY', x: 350, y: 100, w: 100, h: 50, type: 'hallway' },
+  { name: 'HALLWAY_SECURITY_CONTROL', x: 750, y: 100, w: 100, h: 50, type: 'hallway' },
+  { name: 'HALLWAY_SERVER_LAB', x: 200, y: 200, w: 50, h: 100, type: 'hallway' },
   { name: 'HALLWAY_HUB_SECURITY', x: 575, y: 200, w: 50, h: 100, type: 'hallway' },
   { name: 'HALLWAY_HUB_LAB', x: 350, y: 400, w: 100, h: 50, type: 'hallway' },
   { name: 'HALLWAY_HUB_GENERATOR', x: 750, y: 400, w: 100, h: 50, type: 'hallway' },
-  { name: 'HALLWAY_HUB_COMMS', x: 575, y: 550, w: 50, h: 100, type: 'hallway' },
-  { name: 'HALLWAY_COMMS_MEDICAL', x: 575, y: 800, w: 50, h: 50, type: 'hallway' },
   { name: 'HALLWAY_LAB_STORAGE', x: 200, y: 550, w: 50, h: 100, type: 'hallway' },
-  { name: 'HALLWAY_SECURITY_CONTROL', x: 750, y: 100, w: 100, h: 50, type: 'hallway' },
-  { name: 'HALLWAY_GENERATOR_EXIT', x: 950, y: 550, w: 50, h: 100, type: 'hallway' }
+  { name: 'HALLWAY_HUB_COMMS', x: 575, y: 550, w: 50, h: 100, type: 'hallway' },
+  { name: 'HALLWAY_GENERATOR_REACTOR', x: 950, y: 550, w: 50, h: 100, type: 'hallway' },
+  { name: 'HALLWAY_STORAGE_ELECTRICAL', x: 200, y: 800, w: 50, h: 50, type: 'hallway' },
+  { name: 'HALLWAY_COMMS_MEDICAL', x: 575, y: 800, w: 50, h: 50, type: 'hallway' },
+  { name: 'HALLWAY_ELECTRICAL_MEDICAL', x: 350, y: 880, w: 100, h: 50, type: 'hallway' }
 ];
 
 // Interactive System Console Coordinates (Investigate & Repair)
 const SYSTEM_CONSOLES = [
-  { id: 'generator', name: 'Generator', room: 'GENERATOR', x: 975, y: 425 },
-  { id: 'communications', name: 'Communications', room: 'COMMUNICATIONS', x: 600, y: 725 },
+  { id: 'generator', name: 'Generator', room: 'GENERATOR ROOM', x: 975, y: 425 },
+  { id: 'communications', name: 'Communications', room: 'COMMUNICATIONS ROOM', x: 600, y: 725 },
   { id: 'security', name: 'Security', room: 'SECURITY', x: 600, y: 125 },
-  { id: 'medical', name: 'Medical', room: 'MEDICAL', x: 600, y: 910 },
+  { id: 'medical', name: 'Medical', room: 'MEDICAL LAB', x: 600, y: 910 },
   { id: 'control', name: 'Control System', room: 'CONTROL ROOM', x: 975, y: 125 }
 ];
 

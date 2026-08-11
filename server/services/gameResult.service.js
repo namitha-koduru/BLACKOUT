@@ -15,9 +15,7 @@ export const checkWinConditions = (room, io) => {
   const livingCrew = players.filter((p) => p.team === 'crew' && p.isAlive).length;
 
   const generatorHealth = room.game.systems?.generator?.health || 0;
-  const allSystemsRestored = Object.values(room.game.systems || {}).every(
-    (sys) => sys.health >= 100
-  );
+  const tasksCompleted = (room.game.globalTaskProgress || 0) >= 100;
 
   let winner = null;
 
@@ -27,8 +25,8 @@ export const checkWinConditions = (room, io) => {
     winner = 'saboteur';
   }
   // Crew Win Condition 1: All Saboteurs eliminated
-  // Crew Win Condition 2: All critical systems fully restored
-  else if (livingSaboteurs === 0 || allSystemsRestored) {
+  // Crew Win Condition 2: All Crew tasks completed
+  else if (livingSaboteurs === 0 || tasksCompleted) {
     winner = 'crew';
   }
 

@@ -17,30 +17,56 @@ import FuseAlignment from '../components/FuseAlignment.jsx';
 import SignalCalibration from '../components/SignalCalibration.jsx';
 import PowerRouting from '../components/PowerRouting.jsx';
 import SystemRestart from '../components/SystemRestart.jsx';
+import TaskModal from '../components/TaskModal.jsx';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const TASK_POSITIONS = {
+  generator_calibration: { x: 920, y: 350 },
+  coolant_pressure: { x: 920, y: 720 },
+  camera_alignment: { x: 500, y: 100 },
+  server_maintenance: { x: 280, y: 100 },
+  sample_analysis: { x: 550, y: 920 },
+  comms_calibration: { x: 500, y: 720 },
+  water_purification: { x: 980, y: 720 },
+  air_filtration: { x: 980, y: 680 },
+  fuel_transfer: { x: 180, y: 720 },
+  power_routing: { x: 280, y: 910 },
+  access_reset: { x: 580, y: 100 },
+  data_backup: { x: 180, y: 100 },
+  reactor_temp: { x: 900, y: 680 },
+  sensor_calibration: { x: 280, y: 350 },
+  facility_inspection: { x: 600, y: 400 }
+};
+
 // Walkable rectangles for boundary check (duplicates server definitions)
 const WALKABLE_AREAS = [
+  // Rooms
   { name: 'CENTRAL HUB', x: 450, y: 300, w: 300, h: 250, type: 'room' },
   { name: 'SECURITY', x: 450, y: 50, w: 300, h: 150, type: 'room' },
-  { name: 'LAB', x: 100, y: 300, w: 250, h: 250, type: 'room' },
-  { name: 'GENERATOR', x: 850, y: 300, w: 250, h: 250, type: 'room' },
-  { name: 'COMMUNICATIONS', x: 450, y: 650, w: 300, h: 150, type: 'room' },
-  { name: 'MEDICAL', x: 450, y: 850, w: 300, h: 120, type: 'room' },
+  { name: 'LABORATORY', x: 100, y: 300, w: 250, h: 250, type: 'room' },
+  { name: 'GENERATOR ROOM', x: 850, y: 300, w: 250, h: 250, type: 'room' },
+  { name: 'COMMUNICATIONS ROOM', x: 450, y: 650, w: 300, h: 150, type: 'room' },
+  { name: 'MEDICAL LAB', x: 450, y: 850, w: 300, h: 120, type: 'room' },
   { name: 'STORAGE', x: 100, y: 650, w: 250, h: 150, type: 'room' },
   { name: 'CONTROL ROOM', x: 850, y: 50, w: 250, h: 150, type: 'room' },
-  { name: 'EXIT', x: 850, y: 650, w: 250, h: 150, type: 'room' },
+  { name: 'REACTOR / ENGINEERING', x: 850, y: 650, w: 250, h: 150, type: 'room' },
+  { name: 'SERVER ROOM', x: 100, y: 50, w: 250, h: 150, type: 'room' },
+  { name: 'ELECTRICAL ROOM', x: 100, y: 850, w: 250, h: 120, type: 'room' },
 
   // Hallways
+  { name: 'HALLWAY_SERVER_SECURITY', x: 350, y: 100, w: 100, h: 50, type: 'hallway' },
+  { name: 'HALLWAY_SECURITY_CONTROL', x: 750, y: 100, w: 100, h: 50, type: 'hallway' },
+  { name: 'HALLWAY_SERVER_LAB', x: 200, y: 200, w: 50, h: 100, type: 'hallway' },
   { name: 'HALLWAY_HUB_SECURITY', x: 575, y: 200, w: 50, h: 100, type: 'hallway' },
   { name: 'HALLWAY_HUB_LAB', x: 350, y: 400, w: 100, h: 50, type: 'hallway' },
   { name: 'HALLWAY_HUB_GENERATOR', x: 750, y: 400, w: 100, h: 50, type: 'hallway' },
-  { name: 'HALLWAY_HUB_COMMS', x: 575, y: 550, w: 50, h: 100, type: 'hallway' },
-  { name: 'HALLWAY_COMMS_MEDICAL', x: 575, y: 800, w: 50, h: 50, type: 'hallway' },
   { name: 'HALLWAY_LAB_STORAGE', x: 200, y: 550, w: 50, h: 100, type: 'hallway' },
-  { name: 'HALLWAY_SECURITY_CONTROL', x: 750, y: 100, w: 100, h: 50, type: 'hallway' },
-  { name: 'HALLWAY_GENERATOR_EXIT', x: 950, y: 550, w: 50, h: 100, type: 'hallway' }
+  { name: 'HALLWAY_HUB_COMMS', x: 575, y: 550, w: 50, h: 100, type: 'hallway' },
+  { name: 'HALLWAY_GENERATOR_REACTOR', x: 950, y: 550, w: 50, h: 100, type: 'hallway' },
+  { name: 'HALLWAY_STORAGE_ELECTRICAL', x: 200, y: 800, w: 50, h: 50, type: 'hallway' },
+  { name: 'HALLWAY_COMMS_MEDICAL', x: 575, y: 800, w: 50, h: 50, type: 'hallway' },
+  { name: 'HALLWAY_ELECTRICAL_MEDICAL', x: 350, y: 880, w: 100, h: 50, type: 'hallway' }
 ];
 
 const SYSTEM_CONSOLES = [
@@ -118,6 +144,12 @@ const Blackout3DGame = () => {
   const discoverTerminalEvidence = useRoomStore((state) => state.discoverTerminalEvidence);
   const callEmergencyMeeting = useRoomStore((state) => state.callEmergencyMeeting);
 
+  const startTask = useRoomStore((state) => state.startTask);
+  const completeTask = useRoomStore((state) => state.completeTask);
+  const killAttempt = useRoomStore((state) => state.killAttempt);
+  const reportBody = useRoomStore((state) => state.reportBody);
+  const killCooldownEnd = useRoomStore((state) => state.killCooldownEnd);
+
   // Position States
   const [posX, setPosX] = useState(600);
   const [posY, setPosY] = useState(425);
@@ -131,10 +163,15 @@ const Blackout3DGame = () => {
   // Focus managers
   const [nearSystem, setNearSystem] = useState(null);
   const [nearTerminal, setNearTerminal] = useState(null);
+  const [nearTask, setNearTask] = useState(null);
+  const [nearBody, setNearBody] = useState(null);
+  const [nearKillTarget, setNearKillTarget] = useState(null);
   const [activeRepairSession, setActiveRepairSession] = useState(null);
+  const [activeTaskSession, setActiveTaskSession] = useState(null);
   const [sabPanelOpen, setSabPanelOpen] = useState(false);
   const [investigateOpen, setInvestigateOpen] = useState(false);
   const [webGLAvailable, setWebGLAvailable] = useState(true);
+  const [fakeTasks, setFakeTasks] = useState([]);
 
   // UI settings
   const [graphicsSettings, setGraphicsSettings] = useState({
@@ -208,6 +245,20 @@ const Blackout3DGame = () => {
     };
   }, []);
 
+  // Imposter fake tasks generator
+  useEffect(() => {
+    if (isSaboteurTeam && fakeTasks.length === 0) {
+      const keys = Object.keys(TASK_POSITIONS);
+      const shuffled = [...keys].sort(() => Math.random() - 0.5).slice(0, 4);
+      setFakeTasks(shuffled.map(k => ({
+        taskId: k,
+        name: k.split('_').join(' ').toUpperCase(),
+        roomId: k === 'generator_calibration' ? 'GENERATOR ROOM' : k === 'coolant_pressure' ? 'REACTOR / ENGINEERING' : k === 'camera_alignment' ? 'SECURITY' : 'FACILITY',
+        status: 'NOT_STARTED'
+      })));
+    }
+  }, [isSaboteurTeam, fakeTasks]);
+
   // Proximity trigger interaction keybinds
   useEffect(() => {
     const handleKeyDown = async (e) => {
@@ -215,23 +266,40 @@ const Blackout3DGame = () => {
 
       const key = e.key.toLowerCase();
       
-      // E: Repair System
-      if (key === 'e' && nearSystem && !activeRepairSession && currentPhase === 'exploration') {
-        const res = await startRepair(room.roomCode, playerId, nearSystem.id);
-        if (res.success) {
-          setActiveRepairSession({
-            systemId: nearSystem.id,
-            systemName: nearSystem.name,
-            session: res.session,
-            gameType: res.gameType || 1
-          });
-        } else {
-          toast.error(res.message || 'Terminal connection failed.');
+      // E: Repair System OR Start Task
+      if (key === 'e' && currentPhase === 'exploration' && myPlayerAlive) {
+        if (nearSystem && !activeRepairSession) {
+          const res = await startRepair(room.roomCode, playerId, nearSystem.id);
+          if (res.success) {
+            setActiveRepairSession({
+              systemId: nearSystem.id,
+              systemName: nearSystem.name,
+              session: res.session,
+              gameType: res.gameType || 1
+            });
+          } else {
+            toast.error(res.message || 'Terminal connection failed.');
+          }
+          return;
+        }
+
+        if (nearTask && !activeTaskSession) {
+          if (isSaboteurTeam) {
+            toast.error('ACCESS DENIED: SYSTEM AUTHORIZATION FAILURE', { icon: '🚫' });
+            return;
+          }
+          const res = await startTask(room.roomCode, playerId, nearTask.taskId);
+          if (res.success) {
+            setActiveTaskSession(res.task);
+          } else {
+            toast.error(res.message || 'Task terminal access failed.');
+          }
+          return;
         }
       }
 
       // I: Investigate Database Logs
-      if (key === 'i' && nearTerminal && currentPhase === 'exploration') {
+      if (key === 'i' && nearTerminal && currentPhase === 'exploration' && myPlayerAlive) {
         try {
           const res = await discoverTerminalEvidence(room.roomCode, playerId, nearTerminal.id);
           if (res.success) {
@@ -243,11 +311,39 @@ const Blackout3DGame = () => {
           toast.error('Decryption script failed.');
         }
       }
+
+      // R: Report Body
+      if (key === 'r' && nearBody && currentPhase === 'exploration' && myPlayerAlive) {
+        try {
+          const res = await reportBody(room.roomCode, playerId, nearBody.id);
+          if (res.success) {
+            toast.success('Body reported. Initiating emergency sirens!');
+          } else {
+            toast.error(res.message || 'Body report rejected.');
+          }
+        } catch (err) {
+          toast.error('Transmitter fault.');
+        }
+      }
+
+      // F: Kill Target
+      if (key === 'f' && nearKillTarget && currentPhase === 'exploration' && myPlayerAlive && isSaboteurTeam) {
+        try {
+          const res = await killAttempt(room.roomCode, playerId, nearKillTarget.id);
+          if (res.success) {
+            toast.success('Signature terminated.');
+          } else {
+            toast.error(res.message || 'Kill sequence rejected.');
+          }
+        } catch (err) {
+          toast.error('Laser actuator failed.');
+        }
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [nearSystem, nearTerminal, activeRepairSession, room, playerId, currentPhase, startRepair, discoverTerminalEvidence]);
+  }, [nearSystem, nearTerminal, nearTask, nearBody, nearKillTarget, activeRepairSession, activeTaskSession, room, playerId, currentPhase, myPlayerAlive, isSaboteurTeam, startRepair, discoverTerminalEvidence, startTask, reportBody, killAttempt]);
 
   // Movement Frame Tick Loop
   useEffect(() => {
@@ -261,7 +357,7 @@ const Blackout3DGame = () => {
       let dx = 0;
       let dy = 0;
 
-      if (currentPhase === 'exploration' && myPlayerAlive && !activeRepairSession) {
+      if (currentPhase === 'exploration' && myPlayerAlive && !activeRepairSession && !activeTaskSession) {
         if (activeKeys.current['w'] || activeKeys.current['arrowup']) dy -= 1;
         if (activeKeys.current['s'] || activeKeys.current['arrowdown']) dy += 1;
         if (activeKeys.current['a'] || activeKeys.current['arrowleft']) dx -= 1;
@@ -309,6 +405,7 @@ const Blackout3DGame = () => {
         sendPlayerStopped(room.roomCode, playerId, posX, posY);
       }
 
+      // Systems Diagnostic
       let nearestSys = null;
       let nearestTerm = null;
       let minDistance = 90;
@@ -328,12 +425,79 @@ const Blackout3DGame = () => {
       setNearSystem(nearestSys);
       setNearTerminal(nearestTerm);
 
+      // 1. Task Proximity checks
+      let nearestTask = null;
+      let minTaskDist = 80;
+      if (myPlayerAlive) {
+        if (isSaboteurTeam) {
+          Object.keys(TASK_POSITIONS).forEach((tId) => {
+            const pos = TASK_POSITIONS[tId];
+            const dist = Math.hypot(posX - pos.x, posY - pos.y);
+            if (dist < minTaskDist) {
+              nearestTask = { taskId: tId, name: tId.split('_').join(' ').toUpperCase(), fake: true };
+              minTaskDist = dist;
+            }
+          });
+        } else {
+          const myTasks = room?.game?.playerTasks?.[playerId] || [];
+          myTasks.forEach((t) => {
+            if (t.status !== 'COMPLETED') {
+              const pos = TASK_POSITIONS[t.taskId];
+              if (pos) {
+                const dist = Math.hypot(posX - pos.x, posY - pos.y);
+                if (dist < minTaskDist) {
+                  nearestTask = t;
+                  minTaskDist = dist;
+                }
+              }
+            }
+          });
+        }
+      }
+      setNearTask(nearestTask);
+
+      // 2. Dead body Proximity checks
+      let nearestBody = null;
+      let minBodyDist = 80;
+      if (myPlayerAlive) {
+        const bodies = room?.game?.bodies || [];
+        bodies.forEach((b) => {
+          const dist = Math.hypot(posX - b.position.x, posY - b.position.y);
+          if (dist < minBodyDist) {
+            nearestBody = b;
+            minBodyDist = dist;
+          }
+        });
+      }
+      setNearBody(nearestBody);
+
+      // 3. Kill targets Proximity checks
+      let nearestKillTarget = null;
+      let minKillDist = 80;
+      if (isSaboteurTeam && myPlayerAlive) {
+        const playerPositions = useRoomStore.getState().playerPositions;
+        room.players.forEach((p) => {
+          if (p.id !== playerId) {
+            const gp = room.game?.players?.[p.id];
+            const pos = playerPositions?.[p.id];
+            if (gp?.isAlive && gp?.team === 'crew' && pos) {
+              const dist = Math.hypot(posX - pos.x, posY - pos.y);
+              if (dist < minKillDist) {
+                nearestKillTarget = p;
+                minKillDist = dist;
+              }
+            }
+          }
+        });
+      }
+      setNearKillTarget(nearestKillTarget);
+
       animId = requestAnimationFrame(tick);
     };
 
     animId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animId);
-  }, [posX, posY, currentPhase, myPlayerAlive, activeRepairSession, room, currentRoom, playerId, sendPlayerMove, sendPlayerStopped]);
+  }, [posX, posY, currentPhase, myPlayerAlive, activeRepairSession, activeTaskSession, room, currentRoom, playerId, sendPlayerMove, sendPlayerStopped, isSaboteurTeam]);
 
   // Mini-game repair handlers
   const handleMiniGameComplete = async () => {
@@ -405,6 +569,9 @@ const Blackout3DGame = () => {
     }
   };
 
+  const globalProgress = room.game?.globalTaskProgress || 0;
+  const myTasks = room.game?.playerTasks?.[playerId] || [];
+
   return (
     <div className="relative h-screen w-screen bg-[#101827] overflow-hidden select-none font-mono">
       
@@ -430,6 +597,19 @@ const Blackout3DGame = () => {
       {/* POWER BLACKOUT DARK OVERLAY */}
       {isBlackoutActive && (
         <div className="absolute inset-0 bg-red-950/40 pointer-events-none mix-blend-color-burn z-10 transition-all duration-1000 animate-pulse" />
+      )}
+
+      {/* GLOBAL CREW TASKS PROGRESS BAR */}
+      {currentPhase === 'exploration' && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 w-80 bg-[#172235]/95 border border-[#22d3ee]/35 rounded-xl p-2.5 backdrop-blur shadow-md flex flex-col items-center pointer-events-auto">
+          <div className="flex justify-between w-full text-[9px] font-black uppercase text-slate-400 tracking-wider">
+            <span>Crew Tasks Completed</span>
+            <span className="text-[#22d3ee] font-extrabold">{globalProgress}%</span>
+          </div>
+          <div className="w-full bg-slate-950 h-2 border border-white/5 rounded-full overflow-hidden mt-1.5">
+            <div className="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-all duration-500" style={{ width: `${globalProgress}%` }} />
+          </div>
+        </div>
       )}
 
       {/* TRANSPARENT HUD OVERLAY PANELS */}
@@ -486,7 +666,52 @@ const Blackout3DGame = () => {
           </div>
         </div>
 
-        {/* Proximity Action Prompts */}
+        {/* PERSONAL TASK LIST / DECEPTION CHECKLIST */}
+        {currentPhase === 'exploration' && myPlayerAlive && (
+          <div className="absolute top-24 left-4 z-20 w-60 bg-[#172235]/95 border border-[#22d3ee]/25 rounded-xl p-3 backdrop-blur shadow-md text-left max-h-56 overflow-y-auto pointer-events-auto">
+            {isSaboteurTeam ? (
+              <>
+                <div className="text-[10px] font-black text-red-400 border-b border-red-500/20 pb-1.5 mb-2 uppercase tracking-widest">
+                  🔴 Fake Tasks (Deception)
+                </div>
+                <div className="flex flex-col gap-2">
+                  {fakeTasks.map((t) => (
+                    <div key={t.taskId} className="flex flex-col text-[9px] font-mono leading-tight">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-200">{t.name}</span>
+                        <span className="text-slate-500 uppercase text-[8px]">PRETEND</span>
+                      </div>
+                      <span className="text-[8px] text-slate-500 uppercase">{t.roomId}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-[10px] font-black text-[#22d3ee] border-b border-cyan-500/20 pb-1.5 mb-2 uppercase tracking-widest">
+                  🛰️ Assigned Tasks
+                </div>
+                <div className="flex flex-col gap-2">
+                  {myTasks.map((t) => (
+                    <div key={t.taskId} className="flex flex-col text-[9px] font-mono leading-tight">
+                      <div className="flex items-center justify-between">
+                        <span className={`font-bold ${t.status === 'COMPLETED' ? 'text-slate-500 line-through' : 'text-slate-200'}`}>
+                          {t.name}
+                        </span>
+                        <span className={t.status === 'COMPLETED' ? 'text-emerald-400 font-bold' : t.status === 'IN_PROGRESS' ? 'text-yellow-500' : 'text-slate-500'}>
+                          {t.status === 'COMPLETED' ? '✓ DONE' : t.status === 'IN_PROGRESS' ? 'WORKING' : 'PENDING'}
+                        </span>
+                      </div>
+                      <span className="text-[8px] text-slate-500 uppercase">{t.roomId}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Proximity Action Prompts / Touch Control HUD */}
         {currentPhase === 'exploration' && (
           <div className="self-center flex flex-col items-center gap-1.5 pointer-events-auto">
             {nearSystem && (
@@ -495,6 +720,51 @@ const Blackout3DGame = () => {
             {nearTerminal && !nearSystem && (
               <InteractionPrompt label={nearTerminal.name} actionName="QUERY LOG" />
             )}
+            {nearTask && !nearSystem && (
+              <InteractionPrompt label={nearTask.name} actionName="START TASK" />
+            )}
+            {nearBody && (
+              <InteractionPrompt label={`DECEASED: ${room.players.find(p => p.id === nearBody.victimId)?.name || 'Worker'}`} actionName="REPORT BODY [R]" />
+            )}
+
+            {/* TOUCH/CLICK TRIGGER FOR MOBILE */}
+            <div className="flex gap-2 mt-2">
+              {nearTask && !activeTaskSession && (
+                <button
+                  onClick={async () => {
+                    if (isSaboteurTeam) {
+                      toast.error('ACCESS DENIED: SYSTEM AUTHORIZATION FAILURE', { icon: '🚫' });
+                      return;
+                    }
+                    const res = await startTask(room.roomCode, playerId, nearTask.taskId);
+                    if (res.success) {
+                      setActiveTaskSession(res.task);
+                    } else {
+                      toast.error(res.message || 'Task terminal access failed.');
+                    }
+                  }}
+                  className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 border border-cyan-400/30 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow"
+                >
+                  🛰️ Start Task
+                </button>
+              )}
+
+              {nearBody && (
+                <button
+                  onClick={async () => {
+                    const res = await reportBody(room.roomCode, playerId, nearBody.id);
+                    if (res.success) {
+                      toast.success('Body reported!');
+                    } else {
+                      toast.error(res.message || 'Transmitter block.');
+                    }
+                  }}
+                  className="px-4 py-2 bg-red-600 border border-red-500 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow animate-pulse"
+                >
+                  ☠️ Report Body
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -572,27 +842,58 @@ const Blackout3DGame = () => {
           <div className="flex flex-col gap-2 w-44 pointer-events-auto">
             {currentPhase === 'exploration' && myPlayerAlive && (
               <>
-                {/* EMERGENCY MEETING BUTTON */}
-                <button
-                  onClick={() => {
-                    callEmergencyMeeting(room.roomCode, playerId);
-                  }}
-                  className="w-full py-2 bg-gradient-to-r from-[#22d3ee] to-[#8b5cf6] border border-cyan-500/20 text-white hover:scale-[1.01] rounded-xl text-[9px] font-black uppercase tracking-widest shadow"
-                >
-                  📢 Call Meeting
-                </button>
+                {/* SABOTAGE / KILL ABILITIES FOR SABOTEURS */}
+                {isSaboteurTeam ? (
+                  <div className="flex flex-col gap-1.5 p-2 bg-[#2e1515]/80 border border-red-500/20 rounded-xl">
+                    {/* KILL BUTTON */}
+                    {(() => {
+                      const now = Date.now();
+                      const cooldownRemaining = Math.max(0, Math.ceil((killCooldownEnd - now) / 1000));
+                      const canKillNow = cooldownRemaining === 0 && nearKillTarget;
 
-                {/* SABOTAGE BUTTON TRIGGER */}
-                {isSaboteurTeam && (
+                      return (
+                        <button
+                          disabled={!canKillNow}
+                          onClick={async () => {
+                            const res = await killAttempt(room.roomCode, playerId, nearKillTarget.id);
+                            if (res.success) {
+                              toast.success('Target eliminated!');
+                            } else {
+                              toast.error(res.message || 'Kill request blocked.');
+                            }
+                          }}
+                          className={`w-full py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest shadow transition-all ${
+                            canKillNow
+                              ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse border border-red-500'
+                              : 'bg-slate-900 border border-slate-800 text-slate-500 cursor-not-allowed'
+                          }`}
+                        >
+                          💀 Kill {cooldownRemaining > 0 ? `(${cooldownRemaining}s)` : 'Ready'}
+                        </button>
+                      );
+                    })()}
+
+                    {/* SABOTAGE TRIGGER */}
+                    <button
+                      onClick={() => setSabPanelOpen(!sabPanelOpen)}
+                      className={`w-full py-2.5 rounded-lg text-[9px] font-black uppercase tracking-widest border shadow transition-all ${
+                        sabPanelOpen
+                          ? 'bg-[#ef4444] text-[#f8fafc] border-red-400'
+                          : 'bg-red-950/20 border-red-500/20 text-[#ef4444]'
+                      }`}
+                    >
+                      ⚠️ Sabotage
+                    </button>
+                  </div>
+                ) : (
+                  /* EMERGENCY MEETING FOR CREW */
                   <button
-                    onClick={() => setSabPanelOpen(!sabPanelOpen)}
-                    className={`w-full py-2 rounded-xl text-[9px] font-black uppercase tracking-wider border shadow transition-all ${
-                      sabPanelOpen
-                        ? 'bg-[#ef4444] text-[#f8fafc] border-red-400'
-                        : 'bg-red-950/20 border-red-500/20 text-[#ef4444]'
-                    }`}
+                    onClick={() => {
+                      callEmergencyMeeting(room.roomCode, playerId);
+                    }}
+                    className="w-full py-2.5 bg-gradient-to-r from-[#22d3ee] to-[#8b5cf6] border border-cyan-500/20 text-white hover:scale-[1.01] rounded-xl text-[9px] font-black uppercase tracking-widest shadow"
                   >
-                    ⚠️ Sabotage menu
+                    📢 Call Meeting
                   </button>
                 )}
 
@@ -667,6 +968,26 @@ const Blackout3DGame = () => {
                 RESTORATION UNIT: {activeRepairSession.systemName}
               </h3>
               {renderMiniGame()}
+            </div>
+          </div>
+        )}
+
+        {/* Holographic task panel mini-game */}
+        {activeTaskSession && (
+          <div className="absolute inset-0 bg-black/75 backdrop-blur-sm z-40 flex items-center justify-center pointer-events-auto">
+            <div className="bg-[#172235] border border-[#22d3ee]/40 p-5 rounded-2xl max-w-lg w-full flex flex-col items-center shadow-2xl">
+              <TaskModal
+                task={activeTaskSession}
+                onComplete={async () => {
+                  const res = await completeTask(room.roomCode, playerId, activeTaskSession.taskId);
+                  if (res.success) {
+                    setActiveTaskSession(null);
+                  }
+                }}
+                onCancel={() => {
+                  setActiveTaskSession(null);
+                }}
+              />
             </div>
           </div>
         )}

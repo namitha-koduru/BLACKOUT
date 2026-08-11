@@ -27,6 +27,11 @@ export const canCallMeeting = (room, playerId) => {
     throw new Error('Only active, surviving players can call meetings.');
   }
 
+  // If it's a body report, bypass limits
+  if (room.game.meetingContext?.isBodyReport) {
+    return true;
+  }
+
   // Check round limits: 1 call per round per player
   room.game.meetingUsedByPlayer = room.game.meetingUsedByPlayer || {};
   if (room.game.meetingUsedByPlayer[playerId]) {
@@ -101,8 +106,18 @@ export const startMeeting = (room, playerId, io) => {
   // Setup meeting state attributes
   room.gameState = 'meeting';
   room.game.meetingActive = true;
-  room.game.meetingUsedByPlayer = room.game.meetingUsedByPlayer || {};
-  room.game.meetingUsedByPlayer[playerId] = true;
+
+  // Only count as emergency meeting button use if NOT a body report
+  const isBodyReport = !!room.game.meetingContext?.isBodyReport;
+  const reportedBody = isBodyReport ? { ...room.game.meetingContext } : null;
+
+  // Clean context
+  delete room.game.meetingContext;
+
+  if (!isBodyReport) {
+    room.game.meetingUsedByPlayer = room.game.meetingUsedByPlayer || {};
+    room.game.meetingUsedByPlayer[playerId] = true;
+  }
 
   const eligibleVoters = Object.keys(room.game.players).filter(
     (pId) => room.game.players[pId].isAlive
@@ -111,6 +126,8 @@ export const startMeeting = (room, playerId, io) => {
   room.game.meeting = {
     active: true,
     calledBy: playerId,
+    isBodyReport,
+    reportedBody,
     startedAt: now,
     phase: 'DISCUSSION',
     phaseStartedAt: now,

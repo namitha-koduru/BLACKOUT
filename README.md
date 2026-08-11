@@ -123,6 +123,13 @@ blackout/
 * **`playAgain`** *(Client -> Server)*: Host request to reset game states back to waiting room and ready up for a new match.
 * **`returnToLobby`** *(Client -> Server)*: Host request to clear statistics and return all clients to the lobby.
 
+### Crew Tasks & Imposter Kills
+* **`startTask`** *(Client -> Server)*: Starts an assigned task mini-game. Returns task validation payload.
+* **`completeTask`** *(Client -> Server)*: Completes a task, updating the global task progress bar.
+* **`updateTaskProgress`** *(Client -> Server)*: Emits intermediate progress updates.
+* **`killAttempt`** *(Client -> Server)*: Request by Imposter/Saboteur to eliminate a target crew member within range.
+* **`reportBody`** *(Client -> Server)*: Reports a discovered dead body in a sector to initiate emergency body meeting.
+
 ---
 
 ## 🛠️ Local Installation & Development

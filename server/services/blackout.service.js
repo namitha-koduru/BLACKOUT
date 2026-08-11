@@ -4,6 +4,7 @@ import { createSystems, getDerivedStatus } from './system.service.js';
 import { updateActiveSabotages } from './sabotage.service.js';
 import { createEvidence, sanitizeEvidence } from './evidence.service.js';
 import { cleanupRoomMeetings } from './meeting.service.js';
+import { assignTasks } from './task.service.js';
 
 // Centralized role metadata
 export const ROLES = {
@@ -68,23 +69,29 @@ export const WALKABLE_AREAS = [
   // Rooms
   { name: 'CENTRAL HUB', x: 450, y: 300, w: 300, h: 250, type: 'room' },
   { name: 'SECURITY', x: 450, y: 50, w: 300, h: 150, type: 'room' },
-  { name: 'LAB', x: 100, y: 300, w: 250, h: 250, type: 'room' },
-  { name: 'GENERATOR', x: 850, y: 300, w: 250, h: 250, type: 'room' },
-  { name: 'COMMUNICATIONS', x: 450, y: 650, w: 300, h: 150, type: 'room' },
-  { name: 'MEDICAL', x: 450, y: 850, w: 300, h: 120, type: 'room' },
+  { name: 'LABORATORY', x: 100, y: 300, w: 250, h: 250, type: 'room' },
+  { name: 'GENERATOR ROOM', x: 850, y: 300, w: 250, h: 250, type: 'room' },
+  { name: 'COMMUNICATIONS ROOM', x: 450, y: 650, w: 300, h: 150, type: 'room' },
+  { name: 'MEDICAL LAB', x: 450, y: 850, w: 300, h: 120, type: 'room' },
   { name: 'STORAGE', x: 100, y: 650, w: 250, h: 150, type: 'room' },
   { name: 'CONTROL ROOM', x: 850, y: 50, w: 250, h: 150, type: 'room' },
-  { name: 'EXIT', x: 850, y: 650, w: 250, h: 150, type: 'room' },
+  { name: 'REACTOR / ENGINEERING', x: 850, y: 650, w: 250, h: 150, type: 'room' },
+  { name: 'SERVER ROOM', x: 100, y: 50, w: 250, h: 150, type: 'room' },
+  { name: 'ELECTRICAL ROOM', x: 100, y: 850, w: 250, h: 120, type: 'room' },
 
   // Hallways/Passages
+  { name: 'HALLWAY_SERVER_SECURITY', x: 350, y: 100, w: 100, h: 50, type: 'hallway' },
+  { name: 'HALLWAY_SECURITY_CONTROL', x: 750, y: 100, w: 100, h: 50, type: 'hallway' },
+  { name: 'HALLWAY_SERVER_LAB', x: 200, y: 200, w: 50, h: 100, type: 'hallway' },
   { name: 'HALLWAY_HUB_SECURITY', x: 575, y: 200, w: 50, h: 100, type: 'hallway' },
   { name: 'HALLWAY_HUB_LAB', x: 350, y: 400, w: 100, h: 50, type: 'hallway' },
   { name: 'HALLWAY_HUB_GENERATOR', x: 750, y: 400, w: 100, h: 50, type: 'hallway' },
-  { name: 'HALLWAY_HUB_COMMS', x: 575, y: 550, w: 50, h: 100, type: 'hallway' },
-  { name: 'HALLWAY_COMMS_MEDICAL', x: 575, y: 800, w: 50, h: 50, type: 'hallway' },
   { name: 'HALLWAY_LAB_STORAGE', x: 200, y: 550, w: 50, h: 100, type: 'hallway' },
-  { name: 'HALLWAY_SECURITY_CONTROL', x: 750, y: 100, w: 100, h: 50, type: 'hallway' },
-  { name: 'HALLWAY_GENERATOR_EXIT', x: 950, y: 550, w: 50, h: 100, type: 'hallway' }
+  { name: 'HALLWAY_HUB_COMMS', x: 575, y: 550, w: 50, h: 100, type: 'hallway' },
+  { name: 'HALLWAY_GENERATOR_REACTOR', x: 950, y: 550, w: 50, h: 100, type: 'hallway' },
+  { name: 'HALLWAY_STORAGE_ELECTRICAL', x: 200, y: 800, w: 50, h: 50, type: 'hallway' },
+  { name: 'HALLWAY_COMMS_MEDICAL', x: 575, y: 800, w: 50, h: 50, type: 'hallway' },
+  { name: 'HALLWAY_ELECTRICAL_MEDICAL', x: 350, y: 880, w: 100, h: 50, type: 'hallway' }
 ];
 
 /**
@@ -330,6 +337,17 @@ export const sanitizeRoomForPlayer = (room, playerId) => {
 
   if (sanitized.game) {
     const isGameOver = sanitized.gameState === 'game_over';
+
+    // Sanitize task assignments: players only see their own tasks
+    if (sanitized.game.playerTasks) {
+      if (isGameOver) {
+        // Keep all tasks for final reveal
+      } else {
+        sanitized.game.playerTasks = {
+          [playerId]: room.game.playerTasks[playerId] || []
+        };
+      }
+    }
 
     // Map role and team status per player selectively
     sanitized.players = sanitized.players.map((p) => {
@@ -722,6 +740,9 @@ export const startGame = (roomCode, io, hostId) => {
       })(),
     },
   };
+
+  // Assign tasks authoritatively
+  assignTasks(room);
 
   // Emit private roles securely to each player's socket first
   emitPrivateRoles(room, io);

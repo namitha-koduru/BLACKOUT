@@ -16,6 +16,7 @@ export const useRoomStore = create((set, get) => ({
   myRoleInfo: null, // { role, team, ability, description }
   playerPositions: {}, // playerId -> { x, y, room, connected }
   onMovementError: null,
+  killCooldownEnd: 0,
 
   setOnMovementError: (cb) => set({ onMovementError: cb }),
 
@@ -42,6 +43,8 @@ export const useRoomStore = create((set, get) => ({
     socket.off('gameOver');
     socket.off('finalResults');
     socket.off('gameReset');
+    socket.off('playerKilled');
+    socket.off('killCooldownUpdated');
 
     // Movement socket events
     socket.off('playerPositions');
@@ -235,7 +238,16 @@ export const useRoomStore = create((set, get) => ({
         myRoleInfo: null,
         playerPositions: {},
         timer: 0,
+        killCooldownEnd: 0,
       });
+    });
+
+    socket.on('playerKilled', () => {
+      toast.error('BIO-SIGNATURE OFFLINE: Crew member eliminated!', { icon: '☠' });
+    });
+
+    socket.on('killCooldownUpdated', ({ cooldownEnd }) => {
+      set({ killCooldownEnd: cooldownEnd });
     });
 
     // --- MOVEMENT SYNCHRONIZERS ---
@@ -582,6 +594,61 @@ export const useRoomStore = create((set, get) => ({
 
     return new Promise((resolve) => {
       socket.emit('returnToLobby', { roomCode }, (res) => {
+        resolve(res);
+      });
+    });
+  },
+
+  startTask: (roomCode, playerId, taskId) => {
+    const { socket } = get();
+    if (!socket) return Promise.resolve({ success: false, message: 'No socket connection' });
+
+    return new Promise((resolve) => {
+      socket.emit('startTask', { roomCode, playerId, taskId }, (res) => {
+        resolve(res);
+      });
+    });
+  },
+
+  completeTask: (roomCode, playerId, taskId) => {
+    const { socket } = get();
+    if (!socket) return Promise.resolve({ success: false, message: 'No socket connection' });
+
+    return new Promise((resolve) => {
+      socket.emit('completeTask', { roomCode, playerId, taskId }, (res) => {
+        resolve(res);
+      });
+    });
+  },
+
+  updateTaskProgress: (roomCode, playerId, taskId, progress) => {
+    const { socket } = get();
+    if (!socket) return Promise.resolve({ success: false, message: 'No socket connection' });
+
+    return new Promise((resolve) => {
+      socket.emit('updateTaskProgress', { roomCode, playerId, taskId, progress }, (res) => {
+        resolve(res);
+      });
+    });
+  },
+
+  killAttempt: (roomCode, killerId, victimId) => {
+    const { socket } = get();
+    if (!socket) return Promise.resolve({ success: false, message: 'No socket connection' });
+
+    return new Promise((resolve) => {
+      socket.emit('killAttempt', { roomCode, killerId, victimId }, (res) => {
+        resolve(res);
+      });
+    });
+  },
+
+  reportBody: (roomCode, reporterId, bodyId) => {
+    const { socket } = get();
+    if (!socket) return Promise.resolve({ success: false, message: 'No socket connection' });
+
+    return new Promise((resolve) => {
+      socket.emit('reportBody', { roomCode, reporterId, bodyId }, (res) => {
         resolve(res);
       });
     });
